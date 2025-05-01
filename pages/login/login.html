@@ -1,0 +1,56 @@
+<div class="w-full h-screen flex items-center justify-center bg-white">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full sm:w-96">
+      <!-- Logo no topo -->
+      <div class="flex justify-center mb-8">
+        <img src="imagens/logo.png" alt="Logo da Empresa" class="max-h-16 h-auto w-auto object-contain" />
+      </div>
+      
+  
+      <!-- Formulário de login -->
+      <form id="loginForm" class="space-y-6">
+        <!-- Campo de E-mail -->
+        <div class="flex flex-col">
+          <label for="email" class="text-lg font-semibold text-gray-700 mb-2">E-mail</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            placeholder="Digite seu e-mail"
+            required
+          />
+        </div>
+  
+        <!-- Campo de Senha -->
+        <div class="flex flex-col">
+          <label for="senha" class="text-lg font-semibold text-gray-700 mb-2">Senha</label>
+          <input
+            type="password"
+            id="senha"
+            name="senha"
+            class="p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            placeholder="Digite sua senha"
+            required
+          />
+        </div>
+  
+        <!-- Botão de Login -->
+        <button
+          type="submit"
+          class="w-full bg-yellow-600 text-black py-2 rounded-lg font-semibold shadow hover:bg-yellow-500 transition"
+        >
+          Entrar
+        </button>
+        <div class="text-center mt-4">
+            <p class="text-sm text-gray-600">
+              Não tem uma conta? 
+              <a href="#" onclick="navigateTo('cadastro')" class="text-yellow-600 font-semibold">
+                Cadastre-se
+              </a>
+            </p>
+          </div>
+          
+      </form>
+    </div>
+  </div>
+  

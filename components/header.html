@@ -1,0 +1,45 @@
+<header class="bg-black text-white shadow sticky top-0 z-50">
+  <div class="px-4 py-4 w-full flex items-center justify-between">
+
+    <!-- Logo -->
+    <div class="cursor-pointer" onclick="navigateTo('home')">
+      <img src="imagens/logo.png" alt="Delta Logo" class="h-16 w-auto" />
+    </div>
+
+    <!-- Menu Desktop -->
+    <nav id="nav-menu" class="hidden md:flex flex-wrap items-center gap-4 md:gap-6 text-sm md:text-base relative">
+      <a href="#" data-page="home" class="hover:text-yellow-400 nav-link">Início</a>
+      <a id="registerLink" href="#" data-page="cadastro" class="hover:text-yellow-400 nav-link">Cadastrar</a>
+
+      <!-- Carrinho -->
+      <div class="relative cursor-pointer" onclick="navigateTo('carrinho')">
+        <i class="fas fa-shopping-cart text-white hover:text-yellow-400 text-xl"></i>
+        <span id="cart-count" class="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full px-1.5 py-0.5">0</span>
+      </div>
+
+      <!-- Usuário -->
+      <div class="relative">
+        <button id="userIcon" type="button" onclick="toggleUserMenu(event)" class="text-yellow-400 hover:text-yellow-300 text-xl" style="background: transparent; border: none; cursor: pointer;">
+          <i class="fas fa-user" style="color: #facc15; font-size: 1.5rem;"></i>
+        </button>
+        <div id="userMenu" style="display: none; position: absolute; right: 0; margin-top: 0.5rem; width: 10rem; background: white; color: black; border-radius: 0.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 999;">
+          <a href="#" data-page="pedidos" class="block px-4 py-2 hover:bg-yellow-100 nav-link">Pedidos</a>
+          <a id="editarContaLink" href="#" data-page="editar-conta" class="block px-4 py-2 hover:bg-yellow-100 nav-link">Editar Conta</a>
+          <button id="logoutBtn" onclick="logout()" class="w-full text-left px-4 py-2 hover:bg-yellow-100 text-red-600">Sair</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Menu Mobile -->
+    <div class="md:hidden relative flex flex-col items-start self-start ml-2">
+      <button id="menu-toggle" class="text-yellow-100 bg-yellow-500 hover:bg-yellow-400 px-3 py-1 rounded-md">
+        ☰
+      </button>
+      <div id="mobile-menu" class="hidden absolute left-6 mt-4 bg-black w-48 p-4 rounded shadow-lg z-50 flex flex-col gap-2 items-start transition-all duration-300 ease-in-out">
+        <!-- Menu será preenchido via JS -->
+      </div>
+    </div>
+    
+
+  </div>
+</header>

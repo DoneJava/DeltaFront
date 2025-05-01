@@ -1,0 +1,123 @@
+/* Tela de Login */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #fff; /* Fundo branco */
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-screen {
+  height: 100vh;
+}
+
+.bg-white {
+  background-color: #fff; /* Fundo branco para a tela */
+}
+
+.p-8 {
+  padding: 2rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-gray-700 {
+  color: #4a4a4a;
+}
+
+.text-yellow-600 {
+  color: #facc15;
+}
+
+.text-yellow-500 {
+  color: #fbbf24;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.rounded-lg {
+  border-radius: 8px;
+}
+
+.shadow-lg {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.sm:w-96 {
+  width: 24rem;
+}
+
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.px-4, .py-4 {
+  padding: 1rem;
+}
+
+.transition {
+  transition: background-color 0.3s ease;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #fbbf24;
+}
+
+input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  outline: none;
+}
+
+input:focus {
+  border-color: #facc15;
+  box-shadow: 0 0 0 2px #facc15;
+}
+
+/* Caixa de login com borda preta */
+.bg-white {
+  background-color: #fff;
+  border: 2px solid #000; /* Borda preta */
+}
+
+/* Detalhes em preto para os campos de input */
+input {
+  border: 1px solid #000; /* Borda preta nos inputs */
+}
+
+button {
+  background-color: #facc15; /* Amarelo para o botão */
+  border: 1px solid #000; /* Borda preta no botão */
+  color: #000; /* Texto preto no botão */
+}
+
+button:hover {
+  background-color: #fbbf24; /* Amarelo mais claro no hover */
+}

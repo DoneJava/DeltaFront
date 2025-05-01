@@ -1,0 +1,39 @@
+<section class="w-full px-4 sm:px-6 py-12 min-h-[70vh] bg-gradient-to-br from-gray-100 to-gray-200 flex flex-col items-center justify-start">
+    <div class="max-w-4xl w-full">
+  
+      <!-- Título e subtítulo -->
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-center text-gray-800 mb-2">Meus Pedidos</h2>
+      <p class="text-gray-600 text-center mb-8 text-base sm:text-lg max-w-xl mx-auto">
+        Aqui você encontrará todos os seus pedidos feitos com a Delta.
+      </p>
+  
+      <!-- Lista ou mensagem de pedidos -->
+      <div id="pedidoContainer" class="space-y-4">
+  
+        <!-- Quando não há pedidos -->
+        <div id="pedidoVazio"
+          class="flex flex-col items-center justify-center py-16 border border-dashed border-gray-300 rounded-xl bg-white shadow-sm px-6 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h18M9 3v18m6-18v18M3 9h18" />
+          </svg>
+          <p class="text-gray-500 text-base sm:text-lg">Você ainda não possui pedidos cadastrados.</p>
+        </div>
+  
+        <!-- Quando houver pedidos, exemplo de card (pode ser removido ou gerado via JS) -->
+        <!--
+        <div class="bg-white shadow-md rounded-lg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-gray-800">Pedido #12345</h3>
+            <p class="text-sm text-gray-500">Feito em 02/04/2025</p>
+          </div>
+          <button class="bg-yellow-400 hover:bg-yellow-300 text-black font-semibold px-4 py-2 rounded">Ver Detalhes</button>
+        </div>
+        -->
+  
+      </div>
+  
+    </div>
+  </section>
+  

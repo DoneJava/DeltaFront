@@ -1,0 +1,14 @@
+/* Barra de busca com largura reduzida */
+#searchBar {
+    width: 320px; /* Ajuste para diminuir a largura */
+  }
+  
+  #searchButton {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  #searchButton:hover {
+    background-color: #e2b300;
+  }
+  

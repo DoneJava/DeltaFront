@@ -1,0 +1,219 @@
+/* Estilos padrões */
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+}
+
+aside {
+  height: 100%;
+}
+
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Adicionando estilo para o botão ao lado do campo de busca */
+#searchButton {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#searchButton:hover {
+  background-color: #e2b300;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.4s ease-out;
+}
+
+/* Menu do usuário */
+#userMenu {
+  display: none;
+}
+
+#userMenu.active {
+  display: block;
+}
+
+.dropdown-menu {
+  display: none;
+}
+
+.dropdown.active .dropdown-menu {
+  display: block;
+}
+
+#userIcon svg {
+  color: #facc15; /* amarelo */
+}
+
+#userIcon:hover svg {
+  color: #fcd34d; /* tom mais claro no hover */
+}
+
+.user-icon {
+  color: #facc15; /* amarelo padrão */
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.user-icon:hover {
+  color: #fcd34d; /* amarelo mais claro no hover */
+}
+
+/* Menu principal */
+nav {
+  display: flex;
+  flex-wrap: wrap; /* Permite que os itens se ajustem */
+  justify-content: space-between; /* Espaça os itens igualmente */
+}
+
+nav a {
+  margin: 10px; /* Dá espaçamento entre os links */
+}
+
+/* Media Query para telas pequenas (celulares) */
+@media (max-width: 768px) {
+  /* Quando a tela for pequena, empilhar os itens */
+  nav {
+    flex-direction: column; /* Empilha os itens verticalmente */
+    align-items: center; /* Alinha os itens ao centro */
+  }
+
+  #userMenu {
+    width: 100%; /* Faz o menu ocupar toda a largura */
+    position: static; /* Remove a posição absoluta */
+  }
+
+  #userIcon {
+    margin: 0 auto; /* Centraliza o ícone */
+  }
+
+  .flex {
+    flex-direction: column;
+  }
+
+  #mobileMenu {
+    display: block; /* Torna o menu de navegação visível no celular */
+    width: 100%;
+  }
+
+  .nav-link {
+    margin: 10px 0;
+  }
+}
+
+/* Esconde o menu mobile por padrão */
+#mobileMenu {
+  display: none;
+  background-color: black;
+  color: white;
+  padding: 10px;
+  z-index: 999;
+}
+
+/* Menu mobile visível quando ativo */
+#mobileMenu.active {
+  display: block;
+}
+
+/* Exibe o menu desktop, escondido no mobile */
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Menu horizontal em telas maiores */
+@media (max-width: 768px) {
+  nav {
+    display: none; /* Oculta o menu na tela pequena */
+  }
+
+  #mobileMenu {
+    display: block; /* Mostra o menu mobile */
+  }
+
+  .md:hidden {
+    display: block !important; /* Exibe o botão de menu em telas pequenas */
+  }
+
+  /* Ajustes adicionais para o layout */
+  #cart-count {
+    top: -1rem;
+    right: -1rem;
+  }
+}
+/* Adicionando estilo para a barra de busca e o botão */
+#searchButton {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 15px; /* Aumentando o espaçamento entre o botão e o campo de busca */
+}
+
+#searchButton:hover {
+  background-color: #e2b300;
+}
+
+/* Ajustes específicos para telas pequenas */
+@media (max-width: 768px) {
+  .search-container {
+    display: flex;
+    justify-content: space-between;  /* Garante que o campo de busca e o botão fiquem espaçados */
+    align-items: center;
+    width: 100%;
+  }
+
+  .search-container input {
+    width: 80%; /* Aumenta o campo de busca para dar mais espaço */
+  }
+
+  #searchButton {
+    margin-left: 15px;  /* Dá mais distância entre o campo e o botão */
+    margin-top: 10px;  /* Adiciona um pequeno espaço vertical para o botão */
+  }
+}
+
+.senha-aviso {
+  min-height: 1.5rem;
+  visibility: hidden;
+  display: block;
+}
+
+
+.senha-aviso.visivel {
+  visibility: visible;
+}
+input[type="checkbox"].checkbox-amarelo:checked {
+  background-color: #facc15; /* amarelo Tailwind */
+  border-color: #facc15;
+}
+
+input[type="checkbox"].checkbox-amarelo {
+  accent-color: #facc15;
+}

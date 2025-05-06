@@ -167,6 +167,7 @@ function searchProducts() {
 
 document.addEventListener("DOMContentLoaded", () => {
   carregarProdutos();
+  carregarProdutosDestaqueCarrossel();
 
   const toggleBtn = document.getElementById("toggleSidebar");
   const sidebar = document.getElementById("sidebar");
@@ -219,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ✅ Evita múltiplos carregamentos do carrossel
-  setInterval(() => moverCarrossel(1), 3000);
+  setInterval(() => moverCarrossel(1), 5000);
 });
 
 
@@ -227,12 +228,95 @@ let indiceAtual = 0;
 
 function moverCarrossel(direcao) {
   const carrossel = document.getElementById("carousel");
-  const totalSlides = carrossel.children.length;
+  const totalSlides = carrossel.querySelectorAll(".slide-grupo").length;
+
   indiceAtual = (indiceAtual + direcao + totalSlides) % totalSlides;
   carrossel.style.transform = `translateX(-${indiceAtual * 100}%)`;
 }
 
-// Carrossel automático (executado após o DOM estar carregado)
-document.addEventListener("DOMContentLoaded", () => {
-  setInterval(() => moverCarrossel(1), 3000);
-});
+async function carregarProdutosDestaqueCarrossel() {
+  try {
+    const resposta = await fetch(`${window.apiBaseUrl}/produto/obter-destaques`);
+    if (!resposta.ok) throw new Error("Erro ao buscar produtos de destaque.");
+
+    const produtos = await resposta.json();
+    const carousel = document.getElementById("carousel");
+    if (!carousel) return;
+
+    const imagensDestaque = [
+      "imagens/Destaque 1.png",
+      "imagens/Destaque 2.png",
+      "imagens/Destaque 3.png"
+    ];
+
+    const mensagensDestaque = [
+      `
+        <div class="text-center text-yellow-900 font-extrabold leading-tight space-y-2">
+          <p class="text-4xl">Pra botar o shape! 🔥</p>
+          <p class="text-3xl text-yellow-800 font-bold">Treinar com conforto!!!</p>
+          <p class="text-3xl text-yellow-700 italic">Estoque limitado ⏳</p>
+        </div>
+      `,
+      `
+        <div class="text-center text-yellow-900 font-extrabold leading-tight space-y-2">
+          <p class="text-4xl">Estilo garantido 🎯</p>
+          <p class="text-3xl text-yellow-800 font-bold">Conforto e impacto!</p>
+          <p class="text-3xl text-yellow-700 italic">Você merece! 🌟</p>
+        </div>
+      `,
+      `
+        <div class="text-center text-yellow-900 font-extrabold leading-tight space-y-2">
+          <p class="text-4xl">Atitude é tudo 💪🏼</p>
+          <p class="text-3xl text-yellow-800 font-bold">Vista o que representa.</p>
+          <p class="text-3xl text-yellow-700 italic">Mostre quem você é 💥</p>
+        </div>
+      `
+    ];
+    
+    carousel.innerHTML = "";
+    carousel.style.width = "100%";
+    carousel.style.display = "flex";
+    carousel.style.transition = "transform 0.7s ease-in-out";
+
+    const totalSlides = Math.ceil(produtos.length / 1);
+
+    for (let i = 0; i < totalSlides; i++) {
+      const grupo = document.createElement("div");
+      grupo.className = "slide-grupo flex-shrink-0 w-full h-full flex items-stretch justify-between gap-0 bg-yellow-300";
+
+      const produto = produtos[i];
+      const imagemProduto = produto.imagemUrl?.trim()
+        ? produto.imagemUrl
+        : "https://via.placeholder.com/300x200?text=Sem+Imagem";
+
+      const imagemDestaque = imagensDestaque[i % imagensDestaque.length];
+
+      const card = document.createElement("div");
+      card.className = "w-full flex flex-row items-center cursor-pointer";
+      card.onclick = () => navigateTo('produto-detalhes', `id=${produto.produtoID}`);
+      card.innerHTML = `
+        <!-- IMAGEM DESTAQUE -->
+        <div class="w-[calc(50%+50px)] h-96 overflow-hidden flex items-center justify-center bg-white">
+          <img src="${imagemDestaque}" alt="Promoção"
+            class="h-full w-auto object-fill rounded-none" />
+        </div>
+        
+        <!-- PRODUTO -->
+        <div class="w-[20%] h-96 bg-[#fccb06] flex items-center justify-center">
+          <img src="${imagemProduto}"
+            class="h-72 sm:h-80 md:h-96 object-contain transition-transform duration-500 hover:scale-105 rounded shadow"/>
+        </div>
+
+        <!-- TEXTO CRIATIVO -->
+        <div class="flex-1 h-96 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-200 flex items-center justify-center px-6">
+          ${mensagensDestaque[i % mensagensDestaque.length]}
+        </div>
+      `;
+
+      grupo.appendChild(card);
+      carousel.appendChild(grupo);
+    }
+  } catch (erro) {
+    console.error("❌ Erro ao carregar carrossel de destaques:", erro);
+  }
+}

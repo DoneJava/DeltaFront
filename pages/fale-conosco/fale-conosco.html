@@ -1,0 +1,48 @@
+<section class="w-full px-4 sm:px-8 py-16 bg-white flex justify-center">
+    <div class="w-full max-w-6xl bg-gradient-to-br from-yellow-300 via-yellow-200 to-white rounded-3xl shadow-xl p-10 flex flex-col lg:flex-row gap-12 items-stretch">
+      
+      <!-- Lado Esquerdo: Informações -->
+      <div class="flex-1 flex flex-col justify-center gap-6">
+        <h2 class="text-4xl font-extrabold text-black leading-tight">Fale Conosco</h2>
+        <p class="text-base text-gray-700 leading-relaxed">
+          Quer tirar dúvidas, dar sugestões ou resolver um problema? Preencha o formulário ou fale diretamente com a gente. Estamos aqui para ajudar!
+          <strong>Caso o assunto seja sobre algum pedido, por favor, coloque o Id do pedido que foi gerado ao realiza-lo entre colchetes [ ]</strong>
+        </p>
+        <div class="space-y-4 text-black font-medium">
+          <p>📧 deltamove@gmail.com</p>
+          <p>📞 (21) 99999-9999</p>
+          <p>📍 Rio de Janeiro - RJ</p>
+          <p>🕘 Atendimento: Segunda a Sexta, 9h às 18h</p>
+        </div>
+      </div>
+  
+      <!-- Lado Direito: Formulário -->
+      <form id="form-contato" class="flex-1 bg-white rounded-2xl shadow-md p-8 flex flex-col gap-6">
+        <div>
+          <label class="block text-black font-semibold mb-2">Nome</label>
+          <input type="text" placeholder="Seu nome"
+            class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-black font-semibold mb-2">E-mail</label>
+          <input type="email" placeholder="Seu e-mail"
+            class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-black font-semibold mb-2">Assunto</label>
+          <input type="text" placeholder="Motivo do contato"
+            class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-black font-semibold mb-2">Mensagem</label>
+          <textarea rows="5" placeholder="Escreva sua mensagem"
+            class="w-full p-4 border border-gray-300 rounded-lg shadow-sm resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400"></textarea>
+        </div>
+        <button type="button" onclick="enviarFormularioContato()"
+          class="bg-yellow-400 text-black font-bold py-3 px-6 rounded-lg shadow hover:bg-yellow-300 transition-all duration-300 self-end">
+          Enviar
+        </button>
+      </form>
+    </div>
+  </section>
+  

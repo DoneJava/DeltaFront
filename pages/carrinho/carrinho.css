@@ -1,0 +1,16 @@
+#resumoProdutos {
+    scrollbar-width: thin;  /* A largura da barra de rolagem */
+    scrollbar-color: #ffcc00 #f5f5f5;  /* Cor da barra de rolagem e do fundo */
+  }
+  
+  #resumoProdutos::-webkit-scrollbar {
+    width: 8px;  /* Largura da barra de rolagem */
+  }
+  
+  #resumoProdutos::-webkit-scrollbar-thumb {
+    background-color: #ffcc00;  /* Cor da parte "móvel" da barra */
+  }
+  
+  #resumoProdutos::-webkit-scrollbar-track {
+    background: #f5f5f5;  /* Cor do fundo da barra */
+  }

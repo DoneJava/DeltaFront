@@ -1,9 +1,8 @@
 <!-- DESKTOP (aparece a partir de sm) -->
 <div class="hidden sm:flex w-full bg-white px-4 sm:px-8 py-4 shadow z-20 items-center justify-between gap-4">
   <div class="flex items-center gap-3">
-    <img src="imagens/logo.png" alt="Desconto" class="w-12 h-12 object-contain rounded shadow-md" />
     <span class="text-sm italic font-semibold text-yellow-500">
-      🎯 5% de desconto para entregas no <strong>Rio de Janeiro</strong>
+      Conforto e estética <strong>Juntos! 💪</strong>
     </span>
   </div>
 
@@ -89,19 +88,13 @@
         </button>
       </div>
 
-      <!-- Carrossel -->
       <div class="hidden sm:block relative w-full mb-10 overflow-hidden rounded-2xl shadow-2xl">
         <div id="carousel" class="flex transition-transform duration-700 ease-in-out">
-          <img src="imagens/logo.png" alt="Slide 1"
-            class="w-full h-48 sm:h-60 md:h-72 object-contain transition-transform duration-500 hover:scale-105" />
-          <img src="imagens/logo.png" alt="Slide 2"
-            class="w-full h-48 sm:h-60 md:h-72 object-contain transition-transform duration-500 hover:scale-105" />
-          <img src="imagens/logo.png" alt="Slide 3"
-            class="w-full h-48 sm:h-60 md:h-72 object-contain transition-transform duration-500 hover:scale-105" />
+          <!-- Preenchido dinamicamente -->
         </div>
-
+      
         <div class="absolute inset-0 bg-gradient-to-r from-white/60 via-white/10 to-transparent backdrop-blur-sm pointer-events-none rounded-2xl z-0"></div>
-
+      
         <button onclick="moverCarrossel(-1)"
           class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 text-gray-800 hover:bg-yellow-400 hover:text-black font-bold text-xl px-3 py-2 rounded-full shadow-md transition duration-300 z-10">
           ‹
@@ -111,6 +104,7 @@
           ›
         </button>
       </div>
+      
 
       <!-- Grid de produtos -->
       <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8"></div>

@@ -1,3 +1,5 @@
+let cupomAplicado = null;
+
 async function carregarTelaPagamento() {
   const urlParams = new URLSearchParams(window.location.hash.split('?')[1]);
   const idProduto = parseInt(urlParams.get('idProduto'));
@@ -70,7 +72,53 @@ async function renderizarProdutosCompletos(produtosCarrinho) {
           container.appendChild(itemDiv);
       });
 
-      document.getElementById("valorTotal").textContent = `R$ ${total.toFixed(2)}`;
+      // Aplica o scroll se houver mais de 3 produtos
+if (produtosCarrinho.length >= 3) {
+  container.style.maxHeight = "600px";  // Defina a altura máxima de exibição
+  container.style.overflowY = "auto";  // Ativa o scroll vertical
+} else {
+  container.style.maxHeight = "";  // Remove a altura máxima
+  container.style.overflowY = "";  // Remove o scroll
+}
+
+
+        const valorTotalEl = document.getElementById("valorTotal");
+        const valorComDesconto = aplicarDescontoSeCupom(total);
+
+        if (cupomAplicado && window.resultadoCupom) {
+          const container = valorTotalEl.closest(".border-t") || valorTotalEl.parentElement;
+          container.innerHTML = `
+            <div class="flex flex-col items-end">
+              <span class="text-sm line-through text-yellow-500 mb-[-2px]">R$ ${total.toFixed(2).replace(".", ",")}</span>
+              <div class="flex items-center justify-between w-full mt-1">
+                <span class="text-base font-bold text-gray-800">Total:</span>
+                <span id="valorTotal" class="text-2xl font-extrabold text-green-700 ml-2">R$ ${valorComDesconto.toFixed(2).replace(".", ",")}</span>
+              </div>
+            </div>
+          `;
+        
+          // Ocultar input e botão do cupom se ainda estiverem visíveis
+          const input = document.getElementById("cupomInput");
+          const botao = input?.nextElementSibling;
+          const feedback = document.getElementById("cupomFeedback");
+        
+          if (input && botao && feedback) {
+            input.classList.add("hidden");
+            botao.classList.add("hidden");
+            feedback.textContent = `🎉 Cupom aplicado com sucesso! Você ganhou ${
+              window.resultadoCupom.descontoPorcentagem > 0
+                ? window.resultadoCupom.descontoPorcentagem + "% de desconto"
+                : "R$ " + window.resultadoCupom.descontoValor.toFixed(2).replace(".", ",") + " de desconto"
+            }.`;
+            feedback.classList.remove("hidden", "text-red-500");
+            feedback.classList.add("text-green-600", "font-semibold");
+          }
+        }
+         else {
+          valorTotalEl.textContent = `R$ ${total.toFixed(2).replace(".", ",")}`;
+          valorTotalEl.dataset.valorOriginal = total.toFixed(2); // garante que o valor original seja preservado
+        }
+
       atualizarEstadoBotaoFinalizar();
   } catch (erro) {
       console.error("Erro ao carregar produtos:", erro);
@@ -212,16 +260,21 @@ async function renderizarProdutosCompletos(produtosCarrinho) {
   }
   
 
-  // Verifique se a página carregada é a de pagamento
-document.addEventListener("DOMContentLoaded", async () => {
-  const [page] = location.hash.replace("#", "").split("?");
-
-  // Apenas chama a função para carregar os dados do pagamento quando a página for 'pagamento'
-  if (page === "pagamento") {
-    await carregarTelaPagamento();
-    await validarCheckboxUsuarioLogado();
-  }
-});
+  document.addEventListener("DOMContentLoaded", async () => {
+    const [page] = location.hash.replace("#", "").split("?");
+  
+    if (page === "pagamento") {
+      // ⚠️ Limpa o cupom sempre que a página for carregada (F5 incluso)
+      cupomAplicado = null;
+      window.resultadoCupom = null;
+      localStorage.removeItem("resultadoCupom");
+    
+      await carregarTelaPagamento();
+      await validarCheckboxUsuarioLogado();
+    }
+    
+  });
+  
 
 
   function toggleFormularioEndereco() {
@@ -294,4 +347,98 @@ async function validarCheckboxUsuarioLogado() {
     checkboxContainer.classList.remove("hidden");
     console.log("✅ Checkbox visível - usuário autenticado");
   }
+}
+
+async function aplicarCupom() {
+  const input = document.getElementById("cupomInput");
+  const feedback = document.getElementById("cupomFeedback");
+  const botao = input.nextElementSibling;
+  const valorTotalSpan = document.getElementById("valorTotal");
+
+  const codigoCupom = input.value.trim();
+  if (!codigoCupom || !valorTotalSpan) return;
+
+  const valorOriginal = parseFloat(valorTotalSpan.dataset.valorOriginal || valorTotalSpan.textContent.replace("R$", "").replace(",", "."));
+
+  try {
+    const resposta = await fetch(`${window.apiBaseUrl}/pagamento/validarcupom`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo: codigoCupom })
+    });
+
+    if (!resposta.ok) throw new Error("Erro ao validar cupom.");
+
+    const resultado = await resposta.json();
+
+    if (!resultado.valido) {
+      feedback.textContent = "❌ Cupom inválido ou expirado.";
+      feedback.classList.remove("hidden", "text-green-600");
+      feedback.classList.add("text-red-500");
+      return;
+    }
+    
+    // Armazena os dados para uso posterior
+    cupomAplicado = codigoCupom;
+    window.resultadoCupom = resultado;
+    localStorage.setItem("resultadoCupom", JSON.stringify(resultado));
+
+
+    let desconto = 0;
+    if (resultado.descontoPorcentagem > 0) {
+      desconto = valorOriginal * (resultado.descontoPorcentagem / 100);
+    } else if (resultado.descontoValor > 0) {
+      desconto = resultado.descontoValor;
+    }
+
+    const novoValor = Math.max(0, valorOriginal - desconto);
+
+    const container = valorTotalSpan.closest(".pt-4");
+
+    container.innerHTML = `
+  <div class="border-t pt-4">
+    <div class="flex flex-col items-end">
+      <span class="text-sm line-through text-yellow-500 mb-[-2px]">R$ ${valorOriginal.toFixed(2).replace(".", ",")}</span>
+      <div class="flex items-center justify-between w-full mt-1">
+        <span class="text-base font-bold text-gray-800">Total:</span>
+        <span id="valorTotal" class="text-2xl font-extrabold text-green-700 ml-2">R$ ${novoValor.toFixed(2).replace(".", ",")}</span>
+      </div>
+    </div>
+  </div>
+`;
+
+    input.classList.add("hidden");
+    botao.classList.add("hidden");
+
+    feedback.textContent = `🎉 Cupom aplicado com sucesso! Você ganhou ${
+      resultado.descontoPorcentagem > 0
+        ? resultado.descontoPorcentagem + "% de desconto"
+        : "R$ " + resultado.descontoValor.toFixed(2).replace(".", ",") + " de desconto"
+    }.`;
+    feedback.classList.remove("hidden", "text-red-500");
+    feedback.classList.add("text-green-600", "font-semibold");
+
+  } catch (erro) {
+    console.error("Erro ao aplicar cupom:", erro);
+    feedback.textContent = "Erro ao validar o cupom. Tente novamente.";
+    feedback.classList.remove("hidden", "text-green-600");
+    feedback.classList.add("text-red-500");
+  }
+}
+
+function aplicarDescontoSeCupom(valorOriginal) {
+  if (!cupomAplicado) return valorOriginal;
+
+  let desconto = 0;
+
+  // Simulação local — você pode salvar o último resultado do cupom na variável `resultadoCupom`
+  if (window.resultadoCupom) {
+    if (window.resultadoCupom.descontoPorcentagem > 0) {
+      desconto = valorOriginal * (window.resultadoCupom.descontoPorcentagem / 100);
+    } else if (window.resultadoCupom.descontoValor > 0) {
+      desconto = window.resultadoCupom.descontoValor;
+    }
+  }
+
+  return Math.max(0, valorOriginal - desconto);
 }

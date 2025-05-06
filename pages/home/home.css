@@ -9,6 +9,40 @@
   }
   
   #searchButton:hover {
-    background-color: #e2b300;
+    background-color: #fdfdf9;
+  }
+  
+  #carousel {
+    display: flex;
+    transition: transform 0.7s ease-in-out;
+    will-change: transform;
+  }
+  .slide-grupo {
+    flex: 0 0 100%;
+  }
+  .carousel-button {
+    background-color: white;
+    color: black;
+    font-size: 22px;
+    font-weight: bold;
+    width: 44px;
+    height: 44px;
+    border-radius: 9999px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease, transform 0.3s ease;
+  }
+  
+  .carousel-button:hover {
+    background-color: #ffffff;
+    color: black;
+  }
+  #carousel button {
+    background-color: #ffffff;
+    color: black;
+    transition: background-color 0.3s ease;
+  }
+  
+  #carousel button:hover {
+    background-color: #f8f7f5;
   }
   

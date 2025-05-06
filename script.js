@@ -73,6 +73,7 @@ function ajustarMenuMobile() {
 
   // Sempre visíveis
   mobileMenu.appendChild(criarLink("Início", "home"));
+  mobileMenu.appendChild(criarLink("Fale conosco", "fale-conosco"));
 
   // Carrinho (sempre visível)
   const carrinhoDiv = document.createElement("div");
@@ -131,6 +132,7 @@ function navigateTo(page, query = "") {
 
     if (page === "home") {
       carregarProdutos();
+      carregarProdutosDestaqueCarrossel();
       setupSidebarToggle();
     }
 
@@ -144,6 +146,7 @@ function navigateTo(page, query = "") {
     }
 
     if (page === "carrinho") {
+      console.log('teste')
       const script = document.createElement("script");
       script.src = "pages/carrinho/carrinho.js";
       script.onload = () => {
@@ -182,6 +185,9 @@ function navigateTo(page, query = "") {
     }
 
 
+    
+    
+    
     if (page === "produto-detalhes") {
       const params = new URLSearchParams(query);
       const id = params.get("id");

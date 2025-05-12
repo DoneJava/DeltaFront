@@ -219,8 +219,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ✅ Evita múltiplos carregamentos do carrossel
-  setInterval(() => moverCarrossel(1), 5000);
+  let nomePagina = window.location.pathname.split('/').pop();
+
+  if(nomePagina == 'home'){
+    // ✅ Evita múltiplos carregamentos do carrossel
+    setInterval(() => moverCarrossel(1), 5000);
+  }
 });
 
 

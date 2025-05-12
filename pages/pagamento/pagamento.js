@@ -126,9 +126,8 @@ if (produtosCarrinho.length >= 3) {
       document.getElementById("valorTotal").textContent = "R$ 0,00";
   }
 }
-
-  
-  function renderizarResumo(lista) {
+ 
+function renderizarResumo(lista) {
     const container = document.getElementById("resumoProdutos");
     if (!container) return;
     container.innerHTML = "";
@@ -179,49 +178,93 @@ if (produtosCarrinho.length >= 3) {
     document.getElementById("valorTotal").textContent = `R$ ${total.toFixed(2)}`;
     atualizarEstadoBotaoFinalizar();
 }
-
-  
-  function aplicarCupom() {
+ 
+async function aplicarCupom() {
     const input = document.getElementById("cupomInput");
     const feedback = document.getElementById("cupomFeedback");
+    const botao = input.nextElementSibling;
+    const valorTotalSpan = document.getElementById("valorTotal");
   
-    if (input.value.toLowerCase() === "desconto10") {
-      feedback.textContent = "Cupom aplicado: 10% de desconto.";
+    const codigoCupom = input.value.trim();
+    if (!codigoCupom || !valorTotalSpan) return;
+  
+    const valorOriginal = parseFloat(valorTotalSpan.dataset.valorOriginal || valorTotalSpan.textContent.replace("R$", "").replace(",", "."));
+  
+    try {
+      const resposta = await fetch(`${window.apiBaseUrl}/pagamento/validarcupom`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: codigoCupom })
+      });
+  
+      if (!resposta.ok) throw new Error("Erro ao validar cupom.");
+  
+      const resultado = await resposta.json();
+  
+      if (!resultado.valido) {
+        feedback.textContent = "❌ Cupom inválido ou expirado.";
+        feedback.classList.remove("hidden", "text-green-600");
+        feedback.classList.add("text-red-500");
+        return;
+      }
+      
+      // Armazena os dados para uso posterior
+      cupomAplicado = codigoCupom;
+      window.resultadoCupom = resultado;
+      localStorage.setItem("resultadoCupom", JSON.stringify(resultado));
+  
+  
+      let desconto = 0;
+      if (resultado.descontoPorcentagem > 0) {
+        desconto = valorOriginal * (resultado.descontoPorcentagem / 100);
+      } else if (resultado.descontoValor > 0) {
+        desconto = resultado.descontoValor;
+      }
+  
+      const novoValor = Math.max(0, valorOriginal - desconto);
+  
+      const container = valorTotalSpan.closest(".pt-4");
+  
+      container.innerHTML = `
+    <div class="border-t pt-4">
+      <div class="flex flex-col items-end">
+        <span class="text-sm line-through text-yellow-500 mb-[-2px]">R$ ${valorOriginal.toFixed(2).replace(".", ",")}</span>
+        <div class="flex items-center justify-between w-full mt-1">
+          <span class="text-base font-bold text-gray-800">Total:</span>
+          <span id="valorTotal" class="text-2xl font-extrabold text-green-700 ml-2">R$ ${novoValor.toFixed(2).replace(".", ",")}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  
+      input.classList.add("hidden");
+      botao.classList.add("hidden");
+  
+      feedback.textContent = `🎉 Cupom aplicado com sucesso! Você ganhou ${
+        resultado.descontoPorcentagem > 0
+          ? resultado.descontoPorcentagem + "% de desconto"
+          : "R$ " + resultado.descontoValor.toFixed(2).replace(".", ",") + " de desconto"
+      }.`;
       feedback.classList.remove("hidden", "text-red-500");
-      feedback.classList.add("text-green-600");
-    } else {
-      feedback.textContent = "Cupom inválido.";
-      feedback.classList.remove("hidden");
+      feedback.classList.add("text-green-600", "font-semibold");
+  
+    } catch (erro) {
+      console.error("Erro ao aplicar cupom:", erro);
+      feedback.textContent = "Erro ao validar o cupom. Tente novamente.";
+      feedback.classList.remove("hidden", "text-green-600");
       feedback.classList.add("text-red-500");
     }
   }
-  
-  function finalizarPagamento() {
-    const popup = document.getElementById("popupPagamento");
-    popup.classList.remove("opacity-0", "pointer-events-none");
-  
-    setTimeout(() => {
-      popup.classList.add("opacity-0", "pointer-events-none");
-      localStorage.removeItem("carrinho");
-      atualizarContadorCarrinho();
-      navigateTo("home");
-    }, 2000);
-  }
-  
-  function mostrarFormularioPagamento(tipo) {
-    const todos = ["formPix", "formCartaoCredito", "formCartaoDebito", "formBoleto"];
-    todos.forEach(id => document.getElementById(id).classList.add("hidden"));
-  
-    if (tipo === 1) document.getElementById("formPix").classList.remove("hidden");
-    if (tipo === 2) document.getElementById("formCartaoCredito").classList.remove("hidden");
-    if (tipo === 3) document.getElementById("formCartaoDebito").classList.remove("hidden");
-    if (tipo === 4) document.getElementById("formBoleto").classList.remove("hidden");
-  
+
+function mostrarFormularioPagamento(tipo) {
+    
+    console.log('aeeeeeeeeeeee')
+    
     window.metodoPagamentoSelecionado = tipo;
     atualizarEstadoBotaoFinalizar();
   }
-  
-  function aumentarQuantidade(idProduto, tamanho) {
+
+function aumentarQuantidade(idProduto, tamanho) {
     let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
     const item = carrinho.find(i => i.idProduto === idProduto && i.tamanho === tamanho);
     
@@ -235,7 +278,7 @@ if (produtosCarrinho.length >= 3) {
     }
   }
   
-  function diminuirQuantidade(idProduto, tamanho) {
+function diminuirQuantidade(idProduto, tamanho) {
     let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
     const index = carrinho.findIndex(i => i.idProduto === idProduto && i.tamanho === tamanho);
   
@@ -259,8 +302,7 @@ if (produtosCarrinho.length >= 3) {
     }
   }
   
-
-  document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", async () => {
     const [page] = location.hash.replace("#", "").split("?");
   
     if (page === "pagamento") {
@@ -271,13 +313,24 @@ if (produtosCarrinho.length >= 3) {
     
       await carregarTelaPagamento();
       await validarCheckboxUsuarioLogado();
+      const cepInput = document.getElementById("inputCep");
+
+        console.log(cepInput + 'testando cep')
+if (cepInput) {
+  cepInput.addEventListener("input", function () {
+    const usarDadosUsuario = document.getElementById("usarDadosUsuario")?.checked;
+    const cep = this.value.replace(/\D/g, "");
+
+    if (!usarDadosUsuario && cep.length === 8) {
+      calcularFreteComBaseNoCEP(false);
     }
-    
+  });
+}
+
+    }  
   });
   
-
-
-  function toggleFormularioEndereco() {
+function toggleFormularioEndereco() {
     const checkbox = document.getElementById("usarDadosUsuario");
     const formulario = document.getElementById("formularioEndereco");
   
@@ -288,141 +341,32 @@ if (produtosCarrinho.length >= 3) {
     }
   }
   
-  async function atualizarEstadoBotaoFinalizar() {
-    const produtosCarrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-    const metodoPagamentoSelecionado = window.metodoPagamentoSelecionado ?? null;
-    const botaoFinalizar = document.getElementById("btnFinalizarCompra");
-    const usarDadosUsuario = document.getElementById("usarDadosUsuario");
-
-    if (produtosCarrinho.length === 0 || metodoPagamentoSelecionado === null) {
-        botaoFinalizar.disabled = true;
-        return;
-    }
-
-    // Verificar endereço (se checkbox não marcado)
-    let enderecoValido = true;
-    if (!usarDadosUsuario.checked) {
-        const nome = document.getElementById("inputNome").value.trim();
-        const endereco = document.getElementById("inputEndereco").value.trim();
-        const cep = document.getElementById("inputCep").value.trim();
-        const cpf = document.getElementById("cpf").value.trim();
-        enderecoValido = nome !== "" && endereco !== "" && cep !== "" && cpf !== "";
-    }
-
-    let pagamentoValido = true;
-
-    if (metodoPagamentoSelecionado === 2 || metodoPagamentoSelecionado === 3) {
-        // Cartão de crédito ou débito: todos os campos obrigatórios preenchidos
-        const inputsCartao = (metodoPagamentoSelecionado === 2 ? 
-            document.querySelectorAll("#formCartaoCredito input[type='text']") : 
-            document.querySelectorAll("#formCartaoDebito input[type='text']")
-        );
-
-        pagamentoValido = Array.from(inputsCartao).every(input => input.value.trim() !== "");
-    }
-
-    // Lógica final corrigida
-    if (metodoPagamentoSelecionado === 1 || metodoPagamentoSelecionado === 4) {
-        // PIX ou BOLETO
-        botaoFinalizar.disabled = !enderecoValido;
-    } else if (metodoPagamentoSelecionado === 2 || metodoPagamentoSelecionado === 3) {
-        // CARTÃO
-        botaoFinalizar.disabled = !(pagamentoValido && enderecoValido);
-    } else {
-        botaoFinalizar.disabled = true;
-    }
-}
-
 async function validarCheckboxUsuarioLogado() {
   const checkboxContainer = document.querySelector("label[for='usarDadosUsuario']") || document.querySelector("#usarDadosUsuario")?.closest("label");
 
   if (!checkboxContainer) return;
 
+  await validarTokenSilenciosamente(); // Chama a função que valida o token
+
   if (!window.usuarioAutenticado) {
     checkboxContainer.classList.add("hidden");
-    document.getElementById("usarDadosUsuario").checked = false;
-    toggleFormularioEndereco();
+    document.getElementById("usarDadosUsuario").checked = false; // Desmarca o checkbox se não autenticado
+    toggleFormularioEndereco(); // Esconde o formulário de dados
     console.log("🔒 Checkbox ocultado por falta de login");
   } else {
-    checkboxContainer.classList.remove("hidden");
+    checkboxContainer.classList.remove("hidden"); // Exibe o checkbox se o usuário estiver autenticado
     console.log("✅ Checkbox visível - usuário autenticado");
   }
-}
 
-async function aplicarCupom() {
-  const input = document.getElementById("cupomInput");
-  const feedback = document.getElementById("cupomFeedback");
-  const botao = input.nextElementSibling;
-  const valorTotalSpan = document.getElementById("valorTotal");
-
-  const codigoCupom = input.value.trim();
-  if (!codigoCupom || !valorTotalSpan) return;
-
-  const valorOriginal = parseFloat(valorTotalSpan.dataset.valorOriginal || valorTotalSpan.textContent.replace("R$", "").replace(",", "."));
-
-  try {
-    const resposta = await fetch(`${window.apiBaseUrl}/pagamento/validarcupom`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ codigo: codigoCupom })
+  const checkbox = document.getElementById("usarDadosUsuario");
+  if (checkbox) {
+    checkbox.addEventListener("change", function () {
+      if (checkbox.checked) {
+        calcularFreteComBaseNoCEP(true);
+      } else {
+        document.getElementById("freteInfo").classList.add("hidden");
+      }
     });
-
-    if (!resposta.ok) throw new Error("Erro ao validar cupom.");
-
-    const resultado = await resposta.json();
-
-    if (!resultado.valido) {
-      feedback.textContent = "❌ Cupom inválido ou expirado.";
-      feedback.classList.remove("hidden", "text-green-600");
-      feedback.classList.add("text-red-500");
-      return;
-    }
-    
-    // Armazena os dados para uso posterior
-    cupomAplicado = codigoCupom;
-    window.resultadoCupom = resultado;
-    localStorage.setItem("resultadoCupom", JSON.stringify(resultado));
-
-
-    let desconto = 0;
-    if (resultado.descontoPorcentagem > 0) {
-      desconto = valorOriginal * (resultado.descontoPorcentagem / 100);
-    } else if (resultado.descontoValor > 0) {
-      desconto = resultado.descontoValor;
-    }
-
-    const novoValor = Math.max(0, valorOriginal - desconto);
-
-    const container = valorTotalSpan.closest(".pt-4");
-
-    container.innerHTML = `
-  <div class="border-t pt-4">
-    <div class="flex flex-col items-end">
-      <span class="text-sm line-through text-yellow-500 mb-[-2px]">R$ ${valorOriginal.toFixed(2).replace(".", ",")}</span>
-      <div class="flex items-center justify-between w-full mt-1">
-        <span class="text-base font-bold text-gray-800">Total:</span>
-        <span id="valorTotal" class="text-2xl font-extrabold text-green-700 ml-2">R$ ${novoValor.toFixed(2).replace(".", ",")}</span>
-      </div>
-    </div>
-  </div>
-`;
-
-    input.classList.add("hidden");
-    botao.classList.add("hidden");
-
-    feedback.textContent = `🎉 Cupom aplicado com sucesso! Você ganhou ${
-      resultado.descontoPorcentagem > 0
-        ? resultado.descontoPorcentagem + "% de desconto"
-        : "R$ " + resultado.descontoValor.toFixed(2).replace(".", ",") + " de desconto"
-    }.`;
-    feedback.classList.remove("hidden", "text-red-500");
-    feedback.classList.add("text-green-600", "font-semibold");
-
-  } catch (erro) {
-    console.error("Erro ao aplicar cupom:", erro);
-    feedback.textContent = "Erro ao validar o cupom. Tente novamente.";
-    feedback.classList.remove("hidden", "text-green-600");
-    feedback.classList.add("text-red-500");
   }
 }
 
@@ -442,3 +386,233 @@ function aplicarDescontoSeCupom(valorOriginal) {
 
   return Math.max(0, valorOriginal - desconto);
 }
+
+function capturarDadosPagamento() {
+  // Captura dos produtos do carrinho armazenados no localStorage
+  const produtosCarrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+  const produtos = produtosCarrinho.map(produto => ({
+    idProduto: produto.idProduto,
+    tamanho: produto.tamanho || "-",  // Tamanho do produto, ou "-" caso não tenha
+    quantidade: produto.quantidade
+  }));
+
+  // Captura do método de pagamento selecionado
+  const metodoPagamento = document.querySelector('input[name="metodoPagamento"]:checked')?.value;
+
+  // Captura das informações de pagamento (Cartão, PIX, Débito, ou Boleto)
+  let dadosPagamento = {};
+
+  if (metodoPagamento === "1") {
+    dadosPagamento = { tipo: "PIX", chave: "compras@esporte.com" };
+  } else if (metodoPagamento === "2") {
+    dadosPagamento = { tipo: "Cartão de Crédito" }; // Detalhes preenchidos na tela de finalização
+  } else if (metodoPagamento === "3") {
+    dadosPagamento = { tipo: "Cartão de Débito" }; // Detalhes preenchidos na tela de finalização
+  } else if (metodoPagamento === "4") {
+    dadosPagamento = { tipo: "Boleto", detalhes: "Gerado após a confirmação do pedido" };
+  }
+
+  // Captura dos dados do usuário para envio
+  const dadosEnvio = {
+    nome: document.getElementById("inputNome")?.value || "",
+    endereco: document.getElementById("inputEndereco")?.value || "",
+    complemento: document.getElementById("inputComplemento")?.value || "",
+    cep: document.getElementById("inputCep")?.value || "",
+    cpf: document.getElementById("cpf")?.value || "",
+    portaria24h: document.getElementById("portaria24h")?.checked || false,
+    usarDadosUsuario: document.getElementById("usarDadosUsuario")?.checked || false
+  };
+
+  // Captura do cupom
+  const cupom = document.getElementById("cupomInput")?.value || "";
+
+  // Organiza todos os dados em um objeto
+  const dadosPagamentoCompleto = {
+    produtos,
+    metodoPagamento,
+    dadosPagamento,
+    dadosEnvio,
+    cupom
+  };
+
+  console.log(dadosPagamentoCompleto);
+  return dadosPagamentoCompleto;
+}
+
+function aplicarMascaraCPF(campo) {
+  let valor = campo.value.replace(/\D/g, ''); // Remove tudo que não é número
+
+  if (valor.length <= 3) {
+    campo.value = valor.replace(/(\d{1,3})(\d{0})/, '$1');
+  } else if (valor.length <= 6) {
+    campo.value = valor.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+  } else if (valor.length <= 9) {
+    campo.value = valor.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+  } else {
+    campo.value = valor.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  }
+}
+
+function limitarCampoTexto(campo, limite = 200) {
+  if (campo.value.length > limite) {
+    campo.value = campo.value.slice(0, limite);  // Limita o comprimento do valor
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  setTimeout(function () {
+    // Verificar se os campos existem antes de adicionar os eventos
+
+    // CPF
+    const cpfInput = document.getElementById("cpf");
+    if (cpfInput) {
+      cpfInput.addEventListener("input", function () {
+        aplicarMascaraCPF(this);
+      });
+    }
+
+    // CEP
+    const cepInput = document.getElementById("inputCep");
+    if (cepInput) {
+      cepInput.addEventListener("input", function () {
+        aplicarMascaraCEP(this);
+      });
+    } 
+
+    // Campos de texto para endereço, nome, etc.
+    const camposTexto = [
+      document.getElementById("inputNome"),
+      document.getElementById("inputEndereco"),
+      document.getElementById("inputComplemento"),
+      document.getElementById("inputCep"),
+      document.getElementById("cpf")
+    ];
+
+    // Limitar todos os campos de texto a 200 caracteres
+    camposTexto.forEach(campo => {
+      if (campo) {
+        campo.addEventListener("input", function () {
+          limitarCampoTexto(this, 200);
+        });
+      }
+    });
+
+    // Adicionar o evento para os radio buttons de pagamento
+    const metodoPagamentoRadios = document.querySelectorAll('input[name="metodoPagamento"]');
+    metodoPagamentoRadios.forEach(radio => {
+      radio.addEventListener("change", function() {
+        // Atualiza o estado do botão de finalizar compra quando o tipo de pagamento for alterado
+        atualizarEstadoBotaoFinalizar();
+      });
+    });
+
+    // Adicionar o evento de alteração para o checkbox "Usar dados do usuário"
+    const checkboxDadosUsuario = document.getElementById("usarDadosUsuario");
+    if (checkboxDadosUsuario) {
+      checkboxDadosUsuario.addEventListener("change", function () {
+        atualizarEstadoBotaoFinalizar();
+      });
+    }
+
+  }, 100); // 100ms de delay para garantir que o DOM foi completamente renderizado
+});
+
+let timeoutCalculoFrete = null;
+let ultimoCepCalculado = "";
+
+function atualizarEstadoBotaoFinalizar() {
+  const metodoPagamentoSelecionado = document.querySelector('input[name="metodoPagamento"]:checked');
+  const usarDadosUsuario = document.getElementById("usarDadosUsuario").checked;
+  const nomeCliente = document.getElementById("inputNome").value.trim();
+  const enderecoCliente = document.getElementById("inputEndereco").value.trim();
+  const cpfCliente = document.getElementById("cpf").value.trim();
+  const inputCep = document.getElementById("inputCep");
+  const botaoFinalizar = document.getElementById("btnFinalizarCompra");
+
+  const pagamentoValido = metodoPagamentoSelecionado !== null;
+  const dadosClientePreenchidos = nomeCliente !== "" && enderecoCliente !== "" && cpfCliente !== "";
+  const dadosDoUsuarioLogado = usarDadosUsuario || dadosClientePreenchidos;
+
+  botaoFinalizar.disabled = !(pagamentoValido && dadosDoUsuarioLogado);
+
+  // Debounce do cálculo do frete
+  if (!usarDadosUsuario && inputCep) {
+    const cepNumerico = inputCep.value.replace(/\D/g, "");
+    
+    clearTimeout(timeoutCalculoFrete); // Limpa chamadas anteriores
+
+    timeoutCalculoFrete = setTimeout(() => {
+      if (cepNumerico.length === 8 && cepNumerico !== ultimoCepCalculado) {
+        ultimoCepCalculado = cepNumerico;
+        calcularFreteComBaseNoCEP(false);
+      } else if (cepNumerico.length < 8) {
+        document.getElementById("freteInfo").classList.add("hidden");
+        ultimoCepCalculado = "";
+      }
+    }, 500); // Espera 500ms após o último input
+  }
+}
+
+
+function finalizarPagamento() {
+  const metodoPagamentoSelecionado = document.querySelector('input[name="metodoPagamento"]:checked')?.value || null;
+
+  const dadosPagamento = capturarDadosPagamento();
+  cupomAplicado = null;
+  // Criar objeto global com os dados preenchidos
+  window.dadosResumoPagamentoFinal = {
+    metodoPagamento: metodoPagamentoSelecionado,
+    dadosUsuario: dadosPagamento.dadosEnvio,
+    dadosPagamento: dadosPagamento.dadosPagamento,
+    cupom: dadosPagamento.cupom,
+    produtos: dadosPagamento.produtos,
+    timestamp: new Date().toISOString()  // útil para rastrear momento do clique
+  };
+  window.dadosPagamentoFinal = capturarDadosPagamento();
+  navigateTo('finalizar-compra');
+}
+
+async function calcularFreteComBaseNoCEP(usarDadosUsuario) {
+  const freteInfo = document.getElementById("freteInfo");
+  freteInfo.classList.add("hidden");
+
+  try {
+    let headers = {
+      "Content-Type": "application/json"
+    };
+
+    let body = {};
+
+    if (usarDadosUsuario) {
+      // Apenas envia token e deixa a API decidir o CEP
+      headers["Authorization"] = `Bearer ${getTokenDosCookies()}`;
+    } else {
+      const cep = document.getElementById("inputCep")?.value?.replace(/\D/g, "") || "";
+      if (cep.length !== 8) return;
+      body = { cep };
+    }
+
+    const resposta = await fetch(`${window.apiBaseUrl}/pagamento/calcular-frete`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(body)
+    });
+
+    if (!resposta.ok) throw new Error("Erro ao calcular o frete");
+
+    const freteArray = await resposta.json();
+
+    if (!Array.isArray(freteArray) || freteArray.length === 0) {
+      throw new Error("Nenhuma opção de frete disponível");
+    }
+
+    const frete = freteArray[0]; // pega o primeiro frete da lista
+
+    freteInfo.textContent = `Frete: R$ ${frete.valor.toFixed(2).replace(".", ",")} — Entrega em ${frete.prazoEntrega} dia(s) úteis`;
+    freteInfo.classList.remove("hidden");
+
+  } catch (erro) {
+    console.error("Erro ao calcular frete:", erro);
+  }
+}
+

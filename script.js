@@ -136,6 +136,11 @@ function navigateTo(page, query = "") {
       setupSidebarToggle();
     }
 
+    if (page === "finalizar-compra" && typeof inicializarFinalizarCompra === "function") {
+  inicializarFinalizarCompra();
+}
+
+
     if (page === "editar-conta") {
       const script = document.createElement("script");
       script.src = "pages/editar-conta/editar-conta.js";
@@ -183,10 +188,7 @@ function navigateTo(page, query = "") {
         return;
       }
     }
-
-
-    
-    
+ 
     
     if (page === "produto-detalhes") {
       const params = new URLSearchParams(query);
@@ -513,6 +515,10 @@ async function validarTokenSilenciosamente() {
     console.error("[Auth] Erro ao validar token silenciosamente:", erro);
     window.usuarioAutenticado = false;
   }
+}
+
+function getTokenDosCookies() {
+  return obterCookie("token");
 }
 
 

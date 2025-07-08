@@ -25,8 +25,8 @@ async function obterDadosUsuario() {
             validarFormularioEditarConta(); // Verifica se o botão pode ser ativado
         }
     } catch (erro) {
-        console.error("[ERRO] ao buscar dados do cliente:", erro);
-    }
+      navigateTo('erro-servidor-505');
+  }
 }
 
 function validarFormularioEditarConta() {
@@ -123,9 +123,8 @@ function iniciarFormularioEdicao() {
                 CADExibirPopup(conteudo || "Erro ao atualizar os dados.", "error");
             }
         } catch (erro) {
-            console.error("[ERRO] Atualização falhou:", erro);
-            CADExibirPopup("Erro na comunicação com o servidor.", "error");
-        }
+      navigateTo('erro-servidor-505');
+      }
     });
     
     obterDadosUsuario();

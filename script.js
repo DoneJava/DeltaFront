@@ -111,8 +111,6 @@ function ajustarMenuMobile() {
   atualizarContadorCarrinho();
 }
 
-
-
 function obterCookie(nome) {
   const cookies = document.cookie.split("; ");
   for (let c of cookies) {
@@ -121,7 +119,6 @@ function obterCookie(nome) {
   }
   return null;
 }
-
 
 function navigateTo(page, query = "") {
   const queryString = query ? `?${query}` : "";
@@ -188,7 +185,11 @@ function navigateTo(page, query = "") {
         return;
       }
     }
- 
+    
+    if(page == "pedidos"){
+      carregarPedidosDoCliente();
+    }
+
     
     if (page === "produto-detalhes") {
       const params = new URLSearchParams(query);
@@ -225,8 +226,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const [page, query] = location.hash.replace("#", "").split("?");
   navigateTo(page || "home", query || "");
 });
-
-
 
 function attachNavEvents() {
   const navLinks = document.querySelectorAll("[data-page]");
@@ -355,7 +354,6 @@ function atualizarContadorCarrinho() {
   }
 }
 
-
 async function toggleUserMenu(event) {
   event.stopPropagation();
 
@@ -375,7 +373,6 @@ async function toggleUserMenu(event) {
     }
   }
 }
-
 
 async function verificarAutenticacao() {
   const token = obterCookie("token");
@@ -414,14 +411,12 @@ async function verificarAutenticacao() {
   }
 }
 
-
 function esconderBotaoCadastrar() {
   const botaoCadastrar = document.getElementById("registerLink");  // Obtém o botão "Cadastrar"
 
   botaoCadastrar.style.display = "none";  // Esconde o botão de cadastro
 
 }
-
 
 async function CADEnviarFormulario(dados, form) {
   try {
@@ -471,10 +466,9 @@ async function CADEnviarFormulario(dados, form) {
       CADExibirPopup(mensagem, "error");
     }
   } catch (erro) {
-    CADExibirPopup("Erro ao tentar cadastrar. Por favor, tente novamente.", "error");
+      navigateTo('erro-servidor-505');
   }
 }
-
 
 function logout() {
   // Limpa o cookie do token
@@ -494,7 +488,6 @@ function logout() {
   }, 100); // Espera 500ms antes de recarregar a página
 }
 
-
 async function validarTokenSilenciosamente() {
   const token = obterCookie("token");
   if (!token) {
@@ -510,7 +503,13 @@ async function validarTokenSilenciosamente() {
       }
     });
 
-    window.usuarioAutenticado = resposta.ok;
+    if (resposta.ok) {
+      const dados = await resposta.json();
+      window.usuarioAutenticado = true;
+      window.clienteId = dados.clienteId; // <-- Armazena o clienteId
+    } else {
+      window.usuarioAutenticado = false;
+    }
   } catch (erro) {
     console.error("[Auth] Erro ao validar token silenciosamente:", erro);
     window.usuarioAutenticado = false;

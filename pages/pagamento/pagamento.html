@@ -3,7 +3,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
 
       <!-- Coluna 1: Lista de Produtos -->
-      <div id="resumoProdutos" class="lg:col-span-1 space-y-4 bg-gray-50 p-4 rounded-xl border overflow-hidden overflow-y-auto max-h-[1800px]">
+      <div id="resumoProdutosPagamento" class="lg:col-span-1 space-y-4 bg-gray-50 p-4 rounded-xl border overflow-hidden overflow-y-auto max-h-[1800px]">
         <!-- Produtos renderizados por JS -->
       </div>
 
@@ -14,22 +14,12 @@
         <div class="space-y-4 divide-y divide-gray-300">
           <label class="flex items-center gap-3 text-lg py-2">
             <input type="radio" name="metodoPagamento" value="1" class="form-radio text-yellow-400" onchange="mostrarFormularioPagamento(1);">
-            Pix <span class="text-sm text-gray-500">(5% de desconto)</span>
+            Pix
           </label>
 
           <label class="flex items-center gap-3 text-lg py-2">
             <input type="radio" name="metodoPagamento" value="2" class="form-radio text-yellow-400" onchange="mostrarFormularioPagamento(2);">
-            Cartão de Crédito <span class="text-sm text-gray-500">(em até 10x)</span>
-          </label>
-
-          <label class="flex items-center gap-3 text-lg py-2">
-            <input type="radio" name="metodoPagamento" value="3" class="form-radio text-yellow-400" onchange="mostrarFormularioPagamento(3);">
-            Cartão de Débito
-          </label>
-
-          <label class="flex items-center gap-3 text-lg py-2">
-            <input type="radio" name="metodoPagamento" value="4" class="form-radio text-yellow-400" onchange="mostrarFormularioPagamento(4);">
-            Boleto Bancário
+            Cartão de Crédito/Débito <span class="text-sm text-gray-500">(em até 10x no crédito)</span>
           </label>
         </div>
       
@@ -74,9 +64,10 @@
         <div class="text-lg flex justify-between font-bold border-t pt-4">
           <span>Total:</span>
           <span id="valorTotal" class="text-yellow-600">R$ 0,00</span>
-          <p id="freteInfo" class="text-sm text-gray-700 mt-2 hidden">Frete: R$ 0,00 — Entrega em X dias</p>
         </div>
-        
+
+        <p id="freteInfo" class="text-base font-semibold mt-2 bg-gray-200 p-2 rounded"></p>
+
         <button id="btnFinalizarCompra" onclick="finalizarPagamento()" disabled class="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3 rounded-xl shadow-lg transition text-lg flex items-center justify-center gap-2">
           Finalizar Compra
           <i class="fas fa-lock"></i>

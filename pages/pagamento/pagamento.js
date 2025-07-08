@@ -36,7 +36,7 @@ async function renderizarProdutosCompletos(produtosCarrinho) {
       const produtos = await resposta.json();
       let total = 0;
 
-      const container = document.getElementById("resumoProdutos");
+      const container = document.getElementById("resumoProdutosPagamento");
       container.innerHTML = "";
 
       produtosCarrinho.forEach(item => {
@@ -62,9 +62,9 @@ async function renderizarProdutosCompletos(produtosCarrinho) {
                   <p class="text-sm text-gray-600">Tamanho: <span class="font-semibold text-gray-800">${item.tamanho || '-'}</span></p>
 
                   <div class="flex items-center justify-center gap-2 mt-1 flex-row">
-                      <button onclick="diminuirQuantidade(${item.idProduto}, '${item.tamanho}')" class="quant-btn">−</button>
+                      <button onclick="diminuirQuantidadePagamento(${item.idProduto}, '${item.tamanho}')" class="quant-btn">−</button>
                       <span class="min-w-[24px] text-center font-semibold text-gray-800">${item.quantidade}</span>
-                      <button onclick="aumentarQuantidade(${item.idProduto}, '${item.tamanho}')" class="quant-btn">+</button>
+                      <button onclick="aumentarQuantidadePagamento(${item.idProduto}, '${item.tamanho}')" class="quant-btn">+</button>
                   </div>
               </div>
           `;
@@ -73,15 +73,13 @@ async function renderizarProdutosCompletos(produtosCarrinho) {
       });
 
       // Aplica o scroll se houver mais de 3 produtos
-if (produtosCarrinho.length >= 3) {
-  container.style.maxHeight = "600px";  // Defina a altura máxima de exibição
-  container.style.overflowY = "auto";  // Ativa o scroll vertical
-} else {
-  container.style.maxHeight = "";  // Remove a altura máxima
-  container.style.overflowY = "";  // Remove o scroll
-}
-
-
+      if (produtosCarrinho.length >= 3) {
+        container.style.maxHeight = "600px";  // Defina a altura máxima de exibição
+        container.style.overflowY = "auto";  // Ativa o scroll vertical
+      } else {
+        container.style.maxHeight = "";  // Remove a altura máxima
+        container.style.overflowY = "";  // Remove o scroll
+      }
         const valorTotalEl = document.getElementById("valorTotal");
         const valorComDesconto = aplicarDescontoSeCupom(total);
 
@@ -121,9 +119,7 @@ if (produtosCarrinho.length >= 3) {
 
       atualizarEstadoBotaoFinalizar();
   } catch (erro) {
-      console.error("Erro ao carregar produtos:", erro);
-      container.innerHTML = `<p class="text-center text-red-500">Erro ao carregar os produtos.</p>`;
-      document.getElementById("valorTotal").textContent = "R$ 0,00";
+      navigateTo('erro-servidor-505');
   }
 }
  
@@ -153,9 +149,9 @@ function renderizarResumo(lista) {
                 <p class="text-sm text-gray-600">Tamanho: <span class="font-semibold text-gray-800">${prod.tamanho || '-'}</span></p>
 
                 <div class="flex items-center justify-center gap-2 mt-1 flex-row">
-                    <button onclick="diminuirQuantidade(${prod.idProduto}, '${prod.tamanho}')" class="quant-btn">−</button>
+                    <button onclick="diminuirQuantidadePagamento(${prod.idProduto}, '${prod.tamanho}')" class="quant-btn">−</button>
                     <span class="min-w-[24px] text-center font-semibold text-gray-800">${prod.quantidade}</span>
-                    <button onclick="aumentarQuantidade(${prod.idProduto}, '${prod.tamanho}')" class="quant-btn">+</button>
+                    <button onclick="aumentarQuantidadePagamento(${prod.idProduto}, '${prod.tamanho}')" class="quant-btn">+</button>
                 </div>
 
                 <p class="text-yellow-600 font-semibold mt-2">R$ ${(prod.preco * prod.quantidade).toFixed(2)}</p>
@@ -264,44 +260,49 @@ function mostrarFormularioPagamento(tipo) {
     atualizarEstadoBotaoFinalizar();
   }
 
-function aumentarQuantidade(idProduto, tamanho) {
-    let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-    const item = carrinho.find(i => i.idProduto === idProduto && i.tamanho === tamanho);
-    
-    if (item) {
-      item.quantidade += 1;  // Aumenta a quantidade do produto
-      localStorage.setItem("carrinho", JSON.stringify(carrinho));  // Atualiza o localStorage
-  
-      // Atualiza a interface imediatamente
-      atualizarContadorCarrinho(); 
-      renderizarProdutosCompletos(carrinho);  // Atualiza a tela com os produtos atualizados
-    }
+function aumentarQuantidadePagamento(idProduto, tamanho) {
+  let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+  const item = carrinho.find(i => i.idProduto === idProduto && i.tamanho === tamanho);
+
+  if (item) {
+    item.quantidade += 1;
+    localStorage.setItem("carrinho", JSON.stringify(carrinho));
+
+    atualizarContadorCarrinho(); 
+    renderizarProdutosCompletos(carrinho);
+
+    // 🔁 Recalcular frete após aumentar
+    const usarDadosUsuario = document.getElementById("usarDadosUsuario")?.checked || false;
+    calcularFreteComBaseNoCEP(usarDadosUsuario);
   }
+}
   
-function diminuirQuantidade(idProduto, tamanho) {
-    let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-    const index = carrinho.findIndex(i => i.idProduto === idProduto && i.tamanho === tamanho);
-  
-    if (index !== -1) {
-      if (carrinho[index].quantidade > 1) {
-        carrinho[index].quantidade -= 1;  // Diminui a quantidade do produto
-      } else {
-        carrinho.splice(index, 1);  // Remove o produto do carrinho se a quantidade for 1
-      }
-      
-      localStorage.setItem("carrinho", JSON.stringify(carrinho));  // Atualiza o localStorage
-  
-      // Atualiza a interface imediatamente
-      atualizarContadorCarrinho();
-      renderizarProdutosCompletos(carrinho);  // Atualiza a tela com os produtos atualizados
-  
-      if (carrinho.length === 0) {
-        navigateTo("home");  // Redireciona para a home se o carrinho estiver vazio
-        return; // Importante parar aqui para não tentar renderizar vazio depois
-      }
+function diminuirQuantidadePagamento(idProduto, tamanho) {
+  let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+  const index = carrinho.findIndex(i => i.idProduto === idProduto && i.tamanho === tamanho);
+
+  if (index !== -1) {
+    if (carrinho[index].quantidade > 1) {
+      carrinho[index].quantidade -= 1;
+    } else {
+      carrinho.splice(index, 1);
     }
+
+    localStorage.setItem("carrinho", JSON.stringify(carrinho));
+    atualizarContadorCarrinho();
+    renderizarProdutosCompletos(carrinho);
+
+    if (carrinho.length === 0) {
+      navigateTo("home");
+      return;
+    }
+
+    // 🔁 Recalcular frete após diminuir
+    const usarDadosUsuario = document.getElementById("usarDadosUsuario")?.checked || false;
+    calcularFreteComBaseNoCEP(usarDadosUsuario);
   }
-  
+}
+ 
 document.addEventListener("DOMContentLoaded", async () => {
     const [page] = location.hash.replace("#", "").split("?");
   
@@ -331,15 +332,25 @@ if (cepInput) {
   });
   
 function toggleFormularioEndereco() {
-    const checkbox = document.getElementById("usarDadosUsuario");
-    const formulario = document.getElementById("formularioEndereco");
-  
-    if (!checkbox.checked) {
-      formulario.classList.remove("hidden");
-    } else {
-      formulario.classList.add("hidden");
-    }
+  const checkbox = document.getElementById("usarDadosUsuario");
+  const formulario = document.getElementById("formularioEndereco");
+
+  if (!checkbox.checked) {
+    formulario.classList.remove("hidden");
+  } else {
+    formulario.classList.add("hidden");
+
+    // Limpa todos os inputs, selects e textareas dentro do formulário
+    const campos = formulario.querySelectorAll("input, select, textarea");
+    campos.forEach(function(campo) {
+      if (campo.type === "checkbox" || campo.type === "radio") {
+        campo.checked = false;
+      } else {
+        campo.value = "";
+      }
+    });
   }
+}
   
 async function validarCheckboxUsuarioLogado() {
   const checkboxContainer = document.querySelector("label[for='usarDadosUsuario']") || document.querySelector("#usarDadosUsuario")?.closest("label");
@@ -528,31 +539,38 @@ function atualizarEstadoBotaoFinalizar() {
   const cpfCliente = document.getElementById("cpf").value.trim();
   const inputCep = document.getElementById("inputCep");
   const botaoFinalizar = document.getElementById("btnFinalizarCompra");
+  const freteInfo = document.getElementById("freteInfo");
 
   const pagamentoValido = metodoPagamentoSelecionado !== null;
   const dadosClientePreenchidos = nomeCliente !== "" && enderecoCliente !== "" && cpfCliente !== "";
   const dadosDoUsuarioLogado = usarDadosUsuario || dadosClientePreenchidos;
 
-  botaoFinalizar.disabled = !(pagamentoValido && dadosDoUsuarioLogado);
+  const freteCalculado = freteInfo &&
+  !freteInfo.classList.contains("hidden") &&
+  freteInfo.textContent.includes("R$") &&
+  !freteInfo.textContent.includes("R$ 0,00");
+
+botaoFinalizar.disabled = !(pagamentoValido && dadosDoUsuarioLogado && freteCalculado);
+
 
   // Debounce do cálculo do frete
   if (!usarDadosUsuario && inputCep) {
     const cepNumerico = inputCep.value.replace(/\D/g, "");
-    
-    clearTimeout(timeoutCalculoFrete); // Limpa chamadas anteriores
+
+    clearTimeout(timeoutCalculoFrete);
 
     timeoutCalculoFrete = setTimeout(() => {
       if (cepNumerico.length === 8 && cepNumerico !== ultimoCepCalculado) {
         ultimoCepCalculado = cepNumerico;
         calcularFreteComBaseNoCEP(false);
       } else if (cepNumerico.length < 8) {
-        document.getElementById("freteInfo").classList.add("hidden");
+        freteInfo.classList.add("hidden");
         ultimoCepCalculado = "";
+        atualizarEstadoBotaoFinalizar(); // Atualiza o botão imediatamente
       }
-    }, 500); // Espera 500ms após o último input
+    }, 500);
   }
 }
-
 
 function finalizarPagamento() {
   const metodoPagamentoSelecionado = document.querySelector('input[name="metodoPagamento"]:checked')?.value || null;
@@ -581,15 +599,25 @@ async function calcularFreteComBaseNoCEP(usarDadosUsuario) {
       "Content-Type": "application/json"
     };
 
+    const produtosCarrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+    const produtosParaEnvio = produtosCarrinho.map(p => ({
+      idProduto: p.idProduto,
+      quantidade: p.quantidade,
+      tamanho: p.tamanho || "-"
+    }));
+
     let body = {};
 
     if (usarDadosUsuario) {
-      // Apenas envia token e deixa a API decidir o CEP
       headers["Authorization"] = `Bearer ${getTokenDosCookies()}`;
+      body = { produtos: produtosParaEnvio };
     } else {
       const cep = document.getElementById("inputCep")?.value?.replace(/\D/g, "") || "";
       if (cep.length !== 8) return;
-      body = { cep };
+      body = {
+        cep: cep,
+        produtos: produtosParaEnvio
+      };
     }
 
     const resposta = await fetch(`${window.apiBaseUrl}/pagamento/calcular-frete`, {
@@ -598,21 +626,49 @@ async function calcularFreteComBaseNoCEP(usarDadosUsuario) {
       body: JSON.stringify(body)
     });
 
-    if (!resposta.ok) throw new Error("Erro ao calcular o frete");
+    const texto = await resposta.text();
 
-    const freteArray = await resposta.json();
+    if (!resposta.ok) {
+      // Se a mensagem do back-end for personalizada, exibe na tela
+      freteInfo.textContent = texto;
+      freteInfo.classList.remove("hidden");
+      atualizarEstadoBotaoFinalizar();
+      return;
+    }
+
+    const freteArray = JSON.parse(texto);
 
     if (!Array.isArray(freteArray) || freteArray.length === 0) {
       throw new Error("Nenhuma opção de frete disponível");
     }
 
-    const frete = freteArray[0]; // pega o primeiro frete da lista
+    const frete = freteArray[0];
+
+    if (!frete || frete.valor === undefined || frete.prazoEntrega === undefined) {
+      throw new Error("Resposta de frete inválida.");
+    }
+
+    if (frete.valor === 0) {
+      freteInfo.textContent = "Infelizmente ainda não realizamos entregas para esse CEP.";
+      freteInfo.dataset.valorFrete = "0.00";
+      freteInfo.classList.remove("hidden");
+      window.valorFreteAtual = 0;
+      atualizarEstadoBotaoFinalizar();
+      return;
+    }
 
     freteInfo.textContent = `Frete: R$ ${frete.valor.toFixed(2).replace(".", ",")} — Entrega em ${frete.prazoEntrega} dia(s) úteis`;
+    freteInfo.dataset.valorFrete = frete.valor.toFixed(2);
     freteInfo.classList.remove("hidden");
+    window.valorFreteAtual = frete.valor;
+
+    atualizarEstadoBotaoFinalizar();
 
   } catch (erro) {
     console.error("Erro ao calcular frete:", erro);
+    freteInfo.textContent = "Erro ao calcular o frete. Tente novamente.";
+    freteInfo.classList.remove("hidden");
   }
 }
+
 

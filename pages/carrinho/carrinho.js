@@ -104,10 +104,8 @@ async function carregarCarrinho() {
         }
   
     } catch (erro) {
-        console.error("Erro ao carregar carrinho:", erro);
-        container.innerHTML = `<p class="text-center text-red-500">Erro ao carregar o carrinho.</p>`;
-        totalContainer.textContent = "R$ 0,00";
-    }
+      navigateTo('erro-servidor-505');
+  }
   
     const botaoFinalizar = document.getElementById("btnFinalizarCompra");
     if (botaoFinalizar) {
@@ -118,7 +116,6 @@ async function carregarCarrinho() {
     }
   }
   
-
 // 🔥 Função para remover item
 function removerDoCarrinho(idProduto) {
     let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];

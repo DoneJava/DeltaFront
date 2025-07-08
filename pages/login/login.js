@@ -93,8 +93,7 @@ async function login(dados) {
       CADExibirPopup(mensagem, "error");
     }
   } catch (erro) {
-    console.error("[Auth] Erro ao tentar logar:", erro);
-    CADExibirPopup("Erro ao tentar fazer login. Por favor, tente novamente.", "error");
+      navigateTo('erro-servidor-505');
   }
 }
 

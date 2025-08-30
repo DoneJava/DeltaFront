@@ -1,9 +1,27 @@
 <section class="w-full px-4 py-10 bg-gray-100 min-h-screen">
-  <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-xl p-6 flex flex-col" style="max-height: calc(100vh - 200px); overflow: hidden;">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Meus Pedidos</h1>
+  <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-xl p-6 flex flex-col gap-4"
+       style="max-height: calc(100vh - 200px); overflow: hidden;">
 
-    <div id="containerPedidos" class="space-y-6 overflow-y-auto max-h-[1800px]">
-      <!-- Pedidos do cliente serão renderizados aqui via JS -->
+    <div class="flex items-center justify-between gap-3">
+      <h1 class="text-2xl font-bold text-gray-900">Meus Pedidos</h1>
+      <!-- legenda removida -->
+    </div>
+
+    <!-- Lista com scroll personalizado (mesmo padrão do carrinho) -->
+    <div id="containerPedidos"
+         class="space-y-6 bg-gray-50 p-4 rounded-xl border overflow-hidden overflow-y-auto">
+      <!-- conteúdo via JS -->
     </div>
   </div>
 </section>
+
+
+
+<style>
+  .clamp-2{
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+</style>

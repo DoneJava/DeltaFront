@@ -1,43 +1,232 @@
-/* ============================================================
- *  Inicialização
- * ============================================================ */
-(async function initPedidos() {
-  try {
-    await carregarPedidosDoCliente();
-  } catch (e) {
-    console.error(e);
+/* ======================================================================
+ *  Página: Acompanhar Pedido (sem login)
+ *  - Usuário informa o número do pedido (ID) e vê os detalhes.
+ *  - Baseia-se no layout/estilo da tela "Meus Pedidos".
+ *  - API utilizada (pública): GET /api/pedido/publico/{pedidoId}
+ *    (fallback automático para GET /api/pedido/obter-por-id/{id} se necessário)
+ * ====================================================================== */
+
+/* ==========================
+ * Inicialização
+ * ========================== */
+document.addEventListener("DOMContentLoaded", () => {
+  bindGuestOrderSearchUI();
+
+  // Se vier ?pedido=123 ou ?numero=123 na URL, preenche e busca:
+  const idFromUrl = getOrderIdFromQuery();
+  if (idFromUrl) {
+    const input = document.getElementById("inputNumeroPedido");
+    if (input) input.value = idFromUrl;
+    buscarPedidoGuest(idFromUrl);
   }
-})();
+});
 
-/* ============================================================
- *  Utilidades de formatação
- * ============================================================ */
+/* ==========================
+ * Wire-up da UI
+ * ========================== */
+function bindGuestOrderSearchUI() {
+  const btn = document.getElementById("btnBuscarPedido");
+  const input = document.getElementById("inputNumeroPedido");
+  const form = document.getElementById("formBuscarPedido");
 
-/** Formata número como BRL (com fallback manual). */
+  if (btn) {
+    btn.addEventListener("click", () => {
+      const raw = (input?.value || "").trim();
+      buscarPedidoGuest(raw);
+    });
+  }
+
+  // Permite Enter no input ou envia via <form>
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const raw = (input?.value || "").trim();
+      buscarPedidoGuest(raw);
+    });
+  } else if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const raw = (input?.value || "").trim();
+        buscarPedidoGuest(raw);
+      }
+    });
+  }
+}
+
+/* ==========================
+ * Busca e renderização
+ * ========================== */
+
+/** Busca por ID informado (string), valida e chama a API. */
+async function buscarPedidoGuest(idStr) {
+  const container = ensureContainer();
+  if (!idStr) {
+    container.innerHTML = emptyStateHtml("Informe o número do pedido para visualizar os detalhes.");
+    return;
+  }
+
+  // Aceita apenas números inteiros positivos
+  const id = parseInt(String(idStr).replace(/\D/g, ""), 10);
+  if (!id || id <= 0) {
+    container.innerHTML = errorStateHtml("Número do pedido inválido. Digite apenas números.");
+    return;
+  }
+
+  container.innerHTML = skeletonCards(1);
+  try {
+    const pedido = await fetchPedidoPorId(id);
+    if (!pedido) {
+      container.innerHTML = emptyStateHtml("Pedido não encontrado.");
+      return;
+    }
+    container.innerHTML = renderPedidoCard(pedido);
+    aplicarScrollPedidos(container, 1); // padrão visual consistente
+  } catch (err) {
+    console.error(err);
+    container.innerHTML = errorStateHtml("Não foi possível carregar o pedido agora. Tente novamente em instantes.");
+  }
+}
+
+/** Chama a API pública /api/pedido/publico/{id} (com fallback) e normaliza resposta. */
+async function fetchPedidoPorId(id) {
+  // 1) Tenta o endpoint público novo
+  let resp = await fetchJsonSafe(`${window.apiBaseUrl}/pedido/publico/${id}`);
+
+  // Se a rota pública não existir (405/501/404 fora do “not found do pedido”), tenta o legado:
+  if (resp.kind === "error" && isRouteMissing(resp.status)) {
+    resp = await fetchJsonSafe(`${window.apiBaseUrl}/pedido/obter-por-id/${id}`);
+  }
+
+  // Pedido não encontrado
+  if (resp.kind === "ok" && resp.status === 404) return null;
+
+  // Erro http real
+  if (resp.kind === "error") throw new Error(`HTTP ${resp.status}`);
+
+  const data = resp.data;
+
+  // Se vier apenas { mensagem: "..." } consideramos como vazio
+  if (isPlainMessage(data)) return null;
+
+  // Garante Itens[]
+  if (Array.isArray(data.Itens) || Array.isArray(data.itens)) {
+    // ok
+  } else if (data.ItensJson || data.itensJson) {
+    try {
+      const arr = JSON.parse(data.ItensJson || data.itensJson);
+      data.Itens = Array.isArray(arr) ? arr : [];
+    } catch {
+      data.Itens = [];
+    }
+  } else {
+    data.Itens = [];
+  }
+
+  return data;
+}
+
+/** Pequeno wrapper para fetch + json com informação de status */
+async function fetchJsonSafe(url) {
+  try {
+    const resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+    const status = resp.status;
+
+    // Alguns códigos não retornam JSON
+    if (status === 204) return { kind: "ok", status, data: null };
+
+    // Tenta parsear JSON — se não for JSON, ainda devolvemos o erro
+    let data = null;
+    try {
+      data = await resp.json();
+    } catch {
+      // ignora parse error e deixa data = null
+    }
+
+    if (!resp.ok) return { kind: "error", status, data };
+    return { kind: "ok", status, data };
+  } catch (e) {
+    return { kind: "error", status: 0, data: null };
+  }
+}
+
+function isRouteMissing(status) {
+  // 404 pode ser "pedido não encontrado" ou "rota inexistente".
+  // Para fallback ser conservador, tentamos em 404, 405 (method not allowed) e 501 (not implemented).
+  return status === 404 || status === 405 || status === 501;
+}
+
+/* ==========================
+ * Helpers de UI / Estado
+ * ========================== */
+
+function ensureContainer() {
+  const el = document.getElementById("containerPedidoGuest");
+  if (el) return el;
+  // fallback: cria dinamicamente um container se não existir
+  const div = document.createElement("div");
+  div.id = "containerPedidoGuest";
+  div.className = "space-y-6 bg-gray-50 p-4 rounded-xl border overflow-hidden overflow-y-auto";
+  document.body.appendChild(div);
+  return div;
+}
+
+function emptyStateHtml(msg) {
+  return `
+    <div class="border p-4 rounded-xl bg-gray-50 text-gray-600">
+      <p class="text-center">${msg}</p>
+    </div>
+  `;
+}
+
+function errorStateHtml(msg) {
+  return `
+    <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl">
+      <p class="font-semibold">Ops!</p>
+      <p class="text-sm mt-1">${msg}</p>
+    </div>
+  `;
+}
+
+/** Pega ?pedido=123 ou ?numero=123 da URL (retorna string numérica ou null). */
+function getOrderIdFromQuery() {
+  try {
+    const u = new URL(window.location.href);
+    const val = u.searchParams.get("pedido") || u.searchParams.get("numero");
+    if (!val) return null;
+    const onlyDigits = String(val).replace(/\D/g, "");
+    return onlyDigits || null;
+  } catch {
+    return null;
+  }
+}
+
+/* ==========================
+ * Utilidades de formatação
+ * (mesmas da tela "Meus Pedidos")
+ * ========================== */
+
 function formatCurrencyBRL(valor) {
   try {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
       .format(Number(valor || 0));
   } catch {
-    return `R$ ${(Number(valor || 0)).toFixed(2).replace('.', ',')}`;
+    return `R$ ${(Number(valor || 0)).toFixed(2).replace(".", ",")}`;
   }
 }
 
-/** Formata data (ISO ou ticks) para pt-BR; retorna "-" se inválida. */
 function formatDateBR(dateIsoOrTicks) {
   const dt = new Date(dateIsoOrTicks);
   if (isNaN(dt)) return "-";
   return dt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
-/** Normaliza string (remove acentos e lowercase). */
 function _norm(x) {
   return String(x || "")
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().trim();
 }
 
-/** Pega o primeiro valor definido entre as chaves fornecidas. */
 function pick(o, ...keys) {
   for (const k of keys) {
     const v = o && o[k];
@@ -45,13 +234,13 @@ function pick(o, ...keys) {
   }
 }
 
-/* ============================================================
- *  Mapping/estilo de Status (badges e textos coloridos)
- * ============================================================ */
+/* ==========================
+ * Status e rótulos (iguais ao "Meus Pedidos")
+ * ========================== */
 
-/** Badge colorido para status do pedido (mantido exatamente como estava). */
 function statusBadge(status) {
   const s = String(status || "").trim().toLowerCase();
+
   const map = {
     "n": "Novo", "novo": "Novo",
     "processando": "Processando", "processamento": "Processando", "em processamento": "Processando",
@@ -62,7 +251,9 @@ function statusBadge(status) {
     "c": "Cancelado", "cancelado": "Cancelado",
     "aguardando pagamento": "Aguardando pagamento"
   };
+
   const label = map[s] || (status || "Status");
+
   const cls =
     label === "Novo"                 ? "bg-yellow-100 text-yellow-800" :
     label === "Processando"          ? "bg-amber-100 text-amber-800"  :
@@ -73,10 +264,10 @@ function statusBadge(status) {
     label === "Entregue"             ? "bg-green-100 text-green-800" :
     label === "Cancelado"            ? "bg-rose-100 text-rose-800" :
                                        "bg-gray-100 text-gray-700";
+
   return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${cls}">${label}</span>`;
 }
 
-/** Classe de cor do texto para status do pedido. */
 function orderStatusTextClass(st) {
   const s = _norm(st);
   if (s === "novo" || s === "n") return "text-yellow-700";
@@ -88,7 +279,6 @@ function orderStatusTextClass(st) {
   return "text-gray-700";
 }
 
-/** Classe de cor do texto para status do pagamento. */
 function paymentStatusTextClass(st) {
   const s = _norm(st);
   if (s === "aguardando pagamento" || s === "aguardando") return "text-amber-700";
@@ -98,23 +288,22 @@ function paymentStatusTextClass(st) {
   return "text-gray-700";
 }
 
-/** Rótulos dos enums do back (fallback quando não vier descrição). */
 function labelMetodoPagamento(v) {
   const map = { 1: "Cartão de Crédito", 2: "Cartão de Débito", 3: "Pix", 4: "Boleto" };
   const n = Number(v);
   return map[n] || (v ?? "");
 }
+
 function labelStatusPagamento(v) {
   const map = { 1: "Aguardando pagamento", 2: "Pago", 3: "Recusado", 4: "Estornado" };
   const n = Number(v);
   return map[n] || (v ?? "");
 }
 
-/* ============================================================
- *  UI helpers (placeholders/skeleton/scroll)
- * ============================================================ */
+/* ==========================
+ * UI helpers (imagem/placeholder/scroll)
+ * ========================== */
 
-/** Imagem de item com fallback. */
 function itemImagemHtml(url, nome) {
   const safeUrl = url && typeof url === "string" ? url : "";
   const alt = nome || "Produto";
@@ -123,7 +312,6 @@ function itemImagemHtml(url, nome) {
               class="w-20 h-20 object-cover rounded-lg shadow" />`;
 }
 
-/** Skeleton de carregamento (cards). */
 function skeletonCards(qtd) {
   const item = `
     <div class="animate-pulse border p-4 rounded-xl bg-gray-50 shadow">
@@ -145,13 +333,12 @@ function skeletonCards(qtd) {
       </div>
     </div>
   `;
-  return new Array(Math.max(1, qtd || 3)).fill(item).join("");
+  return new Array(Math.max(1, qtd || 1)).fill(item).join("");
 }
 
-/** Aplica altura/scroll do container (usa o mesmo padrão do carrinho). */
 function aplicarScrollPedidos(el, qtdCards) {
   const disponivel = Math.max(320, Math.min(window.innerHeight - 260, 600));
-  if (qtdCards >= 3) {
+  if (qtdCards >= 1) {
     el.style.maxHeight = `${disponivel}px`;
     el.style.overflowY = "auto";
   } else {
@@ -160,83 +347,18 @@ function aplicarScrollPedidos(el, qtdCards) {
   }
 }
 
-/** Reaplica o scroll em resize. */
-function reaplicarScrollAoRedimensionar() {
-  const el = document.getElementById("containerPedidos");
+window.addEventListener("resize", () => {
+  const el = document.getElementById("containerPedidoGuest");
   if (!el) return;
   aplicarScrollPedidos(el, el.childElementCount);
-}
-window.addEventListener("resize", reaplicarScrollAoRedimensionar);
+});
 
-/* ============================================================
- *  Fluxo principal: carregar e renderizar pedidos
- * ============================================================ */
+/* ==========================
+ * Render do Card (mesmo padrão da outra tela)
+ * ========================== */
 
-/** Busca os pedidos do cliente autenticado e renderiza a lista. */
-async function carregarPedidosDoCliente() {
-  const container = document.getElementById("containerPedidos");
-  container.innerHTML = skeletonCards(3);
-
-  try {
-    // 1) Validação/autenticação
-    await validarTokenSilenciosamente();
-    if (!window.usuarioAutenticado) {
-      navigateTo("login");
-      return;
-    }
-
-    const token = obterCookie("token");
-    if (!token) {
-      navigateTo("login");
-      return;
-    }
-
-    // 2) Chamada à API
-    const resp = await fetch(`${window.apiBaseUrl}/pedido/meus`, {
-      headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    // 3) Tratamento de status HTTP
-    if (resp.status === 401 || resp.status === 403) {
-      navigateTo("login");
-      return;
-    }
-    if (resp.status === 404) {
-      container.innerHTML = `<p class="text-center text-gray-500">Você ainda não fez nenhum pedido.</p>`;
-      return;
-    }
-    if (!resp.ok) {
-      throw new Error(`Falha ao carregar pedidos (${resp.status}).`);
-    }
-
-    // 4) Dados
-    const pedidos = await resp.json();
-    if (!Array.isArray(pedidos) || pedidos.length === 0) {
-      container.innerHTML = `<p class="text-center text-gray-500">Você ainda não fez nenhum pedido.</p>`;
-      return;
-    }
-
-    // 5) Render
-    container.innerHTML = pedidos.map(p => renderPedidoCard(p)).join("");
-
-    // 6) Scroll (mesmo comportamento do carrinho)
-    aplicarScrollPedidos(container, pedidos.length);
-
-  } catch (erro) {
-    console.error(erro);
-    container.innerHTML = `
-      <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl">
-        <p class="font-semibold">Ops! Não conseguimos carregar seus pedidos agora.</p>
-        <p class="text-sm mt-1">Tente novamente em instantes.</p>
-      </div>
-    `;
-    // navigateTo("erro-servidor-505"); // mantenha comentado se preferir
-  }
-}
-
-/** Monta o card de um pedido (HTML). */
 function renderPedidoCard(pedido) {
-  // Top-level: campos principais
+  // Cabeçalho
   const numero  = String(pick(pedido, "PedidoID", "pedidoID", "pedidoId", "Numero", "numero", "id") ?? "-");
   const data    = formatDateBR(pick(pedido, "DataPedido", "dataPedido", "Data", "data"));
   const frete   = formatCurrencyBRL(pick(pedido, "ValorFrete", "valorFrete"));
@@ -245,10 +367,6 @@ function renderPedidoCard(pedido) {
   const statusHtml = statusBadge(statusG);
 
   // Pagamento (usa descrição da PROC quando vier, senão mapeia enum numérico)
-  // Observação: as duas linhas abaixo existem também no código original e foram mantidas.
-  const pagamentoDesc   = pick(pedido, "MetodoPagamentoDescricao", "metodoPagamentoDescricao"); // (não usado diretamente)
-  const statusPagDesc   = pick(pedido, "StatusPagamentoDescricao", "statusPagamentoDescricao"); // (não usado diretamente)
-
   const pagamentoDescApi = pick(pedido, "MetodoPagamentoDescricao", "metodoPagamentoDescricao");
   const statusPagDescApi = pick(pedido, "StatusPagamentoDescricao", "statusPagamentoDescricao");
   const pagamentoNum     = pick(pedido, "MetodoPagamento", "metodoPagamento");
@@ -265,7 +383,7 @@ function renderPedidoCard(pedido) {
   // Rastreio
   const rastreio = pick(pedido, "CodigoRastreamento", "codigoRastreamento");
 
-  // Itens do pedido
+  // Itens
   const itens = Array.isArray(pedido.Itens) ? pedido.Itens
              : Array.isArray(pedido.itens) ? pedido.itens : [];
 
@@ -274,9 +392,8 @@ function renderPedidoCard(pedido) {
     const qtd  = pick(item, "Quantidade", "quantidade") ?? 1;
     const img  = pick(item, "ImagemUrl", "imagemUrl", "ImagemPrincipal", "imagemPrincipal") ?? "";
 
-    // Pode vir de um futuro campo do pedido, ou cairá no do produto:
     const tamanhoSelecionado = pick(item, "TamanhoSelecionado", "tamanhoSelecionado", "Tamanho", "tamanho");
-    const isLista = tamanhoSelecionado && /[;,/]/.test(String(tamanhoSelecionado)); // G,GG,M,PP etc.
+    const isLista = tamanhoSelecionado && /[;,/]/.test(String(tamanhoSelecionado));
     const tamanhoHtml = (!tamanhoSelecionado || isLista) ? "" :
       `<p class="text-sm text-gray-600 mt-1">Tamanho: <span class="text-gray-900 font-medium">${tamanhoSelecionado}</span></p>`;
 
@@ -292,7 +409,7 @@ function renderPedidoCard(pedido) {
     `;
   }).join("");
 
-  // Endereço (opcional)
+  // Endereço opcional (se vier)
   const endereco = pedido.enderecoEntrega || pedido.EnderecoEntrega || null;
   const enderecoHtml = endereco ? `
     <div class="text-sm text-gray-700">
@@ -303,7 +420,7 @@ function renderPedidoCard(pedido) {
     </div>
   ` : "";
 
-  // Rastreio (link ou placeholder)
+  // Rastreio link/placeholder
   const rastreioHtml = rastreio ? `
     <a href="https://rastreamento.correios.com.br/app/index.php" target="_blank" rel="noopener"
        class="text-sm font-semibold text-indigo-700 hover:underline">Rastrear (${rastreio})</a>
@@ -349,4 +466,22 @@ function renderPedidoCard(pedido) {
       </div>
     </div>
   `;
+}
+
+/* ==========================
+ * Pequenos utilitários
+ * ========================== */
+
+function isPlainMessage(obj) {
+  if (!obj || typeof obj !== "object") return true;
+  const keys = Object.keys(obj);
+  const looksLikePedido =
+    keys.includes("PedidoID") || keys.includes("pedidoID") ||
+    keys.includes("pedidoId") || keys.includes("Numero")   ||
+    keys.includes("numero")   || keys.includes("id")       ||
+    keys.includes("Itens")    || keys.includes("itens");
+  if (!looksLikePedido && (keys.includes("mensagem") || keys.includes("Mensagem"))) {
+    return true;
+  }
+  return false;
 }

@@ -1,0 +1,63 @@
+<!-- pages/acompanhar-pedido/acompanhar-pedido.html -->
+<section class="w-full px-4 py-10 bg-gray-100 min-h-screen">
+  <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl p-6 md:p-8 flex flex-col gap-6"
+       style="max-height: calc(100vh - 200px); overflow: hidden;">
+
+    <!-- Título e descrição (alinhados à esquerda) -->
+    <div class="space-y-1">
+      <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900">Acompanhar Pedido</h1>
+      <p class="text-sm md:text-base text-gray-600">
+        Informe o número do pedido exibido ao finalizar a compra.
+      </p>
+    </div>
+
+    <!-- Busca compacta e minimalista -->
+    <form id="formBuscarPedido" class="w-full">
+      <div class="flex flex-col sm:flex-row sm:items-end gap-3">
+        <div class="w-full sm:w-auto">
+          <label for="inputNumeroPedido" class="text-xs font-medium text-gray-700">
+            Número do pedido
+          </label>
+          <input
+            id="inputNumeroPedido"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="off"
+            placeholder="Ex.: 1427"
+            class="mt-1 w-full sm:w-60 md:w-72 rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 text-sm shadow-sm focus:border-yellow-400 focus:ring-2 focus:ring-yellow-200 outline-none"
+            aria-label="Número do pedido"
+          />
+        </div>
+
+        <button
+          id="btnBuscarPedido"
+          type="submit"
+          class="inline-flex items-center justify-center gap-2 h-10 px-5 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-black font-semibold text-sm shadow-md transition focus-visible:ring-2 focus-visible:ring-yellow-300"
+        >
+          Buscar
+        </button>
+      </div>
+    </form>
+
+    <!-- Resultado (scrollável, alinhado à esquerda) -->
+    <div
+      id="containerPedidoGuest"
+      class="space-y-6 bg-gray-50 p-4 md:p-5 rounded-xl border overflow-hidden overflow-y-auto"
+    >
+      <p class="text-gray-500">
+        Digite o número do pedido acima e clique em <span class="font-semibold text-gray-700">Buscar</span>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- utilitário usado nos títulos de itens -->
+<style>
+  .clamp-2{
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+</style>

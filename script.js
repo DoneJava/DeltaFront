@@ -1,13 +1,24 @@
+/* ============================================================
+ * GLOBAIS / DEFAULTS
+ * ============================================================ */
 window.usuarioAutenticado = false;
+window.pageSize = 10;
+window.currentPage = 0;
+window.totalItems = 100;
+window.totalPages = Math.ceil(window.totalItems / window.pageSize);
+window.apiBaseUrl = "https://localhost:7059/api";
 
+/* ============================================================
+ * CARREGAMENTO DE HTML (header/footer/pages)
+ * ============================================================ */
 async function loadHTML(id, file) {
-  let filePath = '';
+  let filePath = "";
 
-  if (file === 'header.html') {
-    filePath = './components/header.html';
-  } else if (file === 'footer.html') {
-    filePath = './components/footer.html';
-  } else if (file && !file.includes('header') && !file.includes('footer')) {
+  if (file === "header.html") {
+    filePath = "./components/header.html";
+  } else if (file === "footer.html") {
+    filePath = "./components/footer.html";
+  } else if (file && !file.includes("header") && !file.includes("footer")) {
     filePath = `./pages/${file}.html`;
   } else {
     return;
@@ -16,10 +27,14 @@ async function loadHTML(id, file) {
   try {
     const response = await fetch(filePath);
     if (!response.ok) throw new Error(`Erro ao carregar o arquivo: ${filePath}`);
+
     const html = await response.text();
     const container = document.getElementById(id);
+
     if (container) {
       container.innerHTML = html;
+
+      // bootstrap do header
       if (id === "header") {
         attachDropdown();
         attachNavEvents();
@@ -32,6 +47,9 @@ async function loadHTML(id, file) {
   }
 }
 
+/* ============================================================
+ * MENU MOBILE
+ * ============================================================ */
 function inicializarMenuMobile() {
   const toggleBtn = document.getElementById("menu-toggle");
   const mobileMenu = document.getElementById("mobile-menu");
@@ -59,11 +77,11 @@ function ajustarMenuMobile() {
   const mobileMenu = document.getElementById("mobile-menu");
   if (!mobileMenu) return;
 
-  mobileMenu.innerHTML = '';
+  mobileMenu.innerHTML = "";
   mobileMenu.classList.add("flex", "flex-col", "items-center");
 
   const criarLink = (texto, page) => {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = "#";
     link.textContent = texto;
     link.className = "hover:text-yellow-400 nav-link text-center";
@@ -74,6 +92,8 @@ function ajustarMenuMobile() {
   // Sempre visíveis
   mobileMenu.appendChild(criarLink("Início", "home"));
   mobileMenu.appendChild(criarLink("Fale conosco", "fale-conosco"));
+  // ✅ Novo atalho: Acompanhar pedido (sem login)
+  mobileMenu.appendChild(criarLink("Acompanhar pedido", "acompanhar-pedido"));
 
   // Carrinho (sempre visível)
   const carrinhoDiv = document.createElement("div");
@@ -111,6 +131,9 @@ function ajustarMenuMobile() {
   atualizarContadorCarrinho();
 }
 
+/* ============================================================
+ * COOKIES / UTIL
+ * ============================================================ */
 function obterCookie(nome) {
   const cookies = document.cookie.split("; ");
   for (let c of cookies) {
@@ -120,6 +143,13 @@ function obterCookie(nome) {
   return null;
 }
 
+function getTokenDosCookies() {
+  return obterCookie("token");
+}
+
+/* ============================================================
+ * NAVEGAÇÃO SPA
+ * ============================================================ */
 function navigateTo(page, query = "") {
   const queryString = query ? `?${query}` : "";
   window.history.pushState({}, "", `#${page}${queryString}`);
@@ -134,9 +164,8 @@ function navigateTo(page, query = "") {
     }
 
     if (page === "finalizar-compra" && typeof inicializarFinalizarCompra === "function") {
-  inicializarFinalizarCompra();
-}
-
+      inicializarFinalizarCompra();
+    }
 
     if (page === "editar-conta") {
       const script = document.createElement("script");
@@ -148,7 +177,7 @@ function navigateTo(page, query = "") {
     }
 
     if (page === "carrinho") {
-      console.log('teste')
+      console.log("teste");
       const script = document.createElement("script");
       script.src = "pages/carrinho/carrinho.js";
       script.onload = () => {
@@ -181,16 +210,15 @@ function navigateTo(page, query = "") {
       const token = obterCookie("token");
       inicializarLogin();
       if (token) {
-        navigateTo('home')
+        navigateTo("home");
         return;
       }
     }
-    
-    if(page == "pedidos"){
+
+    if (page === "pedidos") {
       carregarPedidosDoCliente();
     }
 
-    
     if (page === "produto-detalhes") {
       const params = new URLSearchParams(query);
       const id = params.get("id");
@@ -200,6 +228,26 @@ function navigateTo(page, query = "") {
         if (typeof carregarDetalhesProduto === "function" && typeof carregarImagensProduto === "function") {
           carregarDetalhesProduto(id);
           carregarImagensProduto(id);
+        }
+      };
+      document.body.appendChild(script);
+    }
+
+    // ✅ Nova rota: Acompanhar pedido (sem login)
+    if (page === "acompanhar-pedido") {
+      const script = document.createElement("script");
+      script.src = "pages/acompanhar-pedido/acompanhar-pedido.js";
+      script.onload = () => {
+        // O arquivo dessa página usa DOMContentLoaded; como estamos em SPA,
+        // chamamos manualmente os binds e o preenchimento por querystring:
+        if (typeof bindGuestOrderSearchUI === "function") bindGuestOrderSearchUI();
+        if (typeof getOrderIdFromQuery === "function" && typeof buscarPedidoGuest === "function") {
+          const idFromUrl = getOrderIdFromQuery();
+          if (idFromUrl) {
+            const input = document.getElementById("inputNumeroPedido");
+            if (input) input.value = idFromUrl;
+            buscarPedidoGuest(idFromUrl);
+          }
         }
       };
       document.body.appendChild(script);
@@ -227,6 +275,9 @@ document.addEventListener("DOMContentLoaded", () => {
   navigateTo(page || "home", query || "");
 });
 
+/* ============================================================
+ * NAV EVENTS / DROPDOWN
+ * ============================================================ */
 function attachNavEvents() {
   const navLinks = document.querySelectorAll("[data-page]");
   navLinks.forEach(link => {
@@ -241,7 +292,6 @@ function attachNavEvents() {
 function attachDropdown() {
   const icon = document.getElementById("userIcon");
   const menu = document.getElementById("userMenu");
-
   if (!icon || !menu) return;
 
   icon.addEventListener("click", function (event) {
@@ -250,6 +300,7 @@ function attachDropdown() {
     menu.style.display = isVisible ? "none" : "block";
   });
 
+  // (duplicado no código original; mantido para não alterar comportamento)
   document.addEventListener("click", function (event) {
     if (!menu.contains(event.target) && !icon.contains(event.target)) {
       menu.style.display = "none";
@@ -262,6 +313,9 @@ function attachDropdown() {
   });
 }
 
+/* ============================================================
+ * FORM / SENHA / SIDEBAR
+ * ============================================================ */
 function setupSenhaValidation() {
   const form = document.querySelector("form");
   if (!form) return;
@@ -318,7 +372,6 @@ function setupSenhaValidation() {
 function setupSidebarToggle() {
   const toggleBtn = document.getElementById("toggleSidebar");
   const sidebar = document.getElementById("sidebar");
-
   if (!toggleBtn || !sidebar) return;
 
   toggleBtn.onclick = () => {
@@ -335,6 +388,9 @@ function setupSidebarToggle() {
   });
 }
 
+/* ============================================================
+ * CARRINHO: contador
+ * ============================================================ */
 function atualizarContadorCarrinho() {
   const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
   const total = carrinho.reduce((acc, item) => acc + (item.quantidade || 0), 0);
@@ -354,6 +410,9 @@ function atualizarContadorCarrinho() {
   }
 }
 
+/* ============================================================
+ * MENU USUÁRIO / AUTH
+ * ============================================================ */
 async function toggleUserMenu(event) {
   event.stopPropagation();
 
@@ -386,9 +445,7 @@ async function verificarAutenticacao() {
   try {
     const resposta = await fetch(`${window.apiBaseUrl}/cliente/validar-token`, {
       method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { "Authorization": `Bearer ${token}` }
     });
 
     if (!resposta.ok) {
@@ -404,7 +461,7 @@ async function verificarAutenticacao() {
     // 🔁 Atualiza o header inteiro após login
     await loadHTML("header", "header.html");
 
-    navigateTo('home');
+    navigateTo("home");
   } catch (erro) {
     console.error("[Auth] Erro ao validar token:", erro);
     window.usuarioAutenticado = false;
@@ -412,10 +469,8 @@ async function verificarAutenticacao() {
 }
 
 function esconderBotaoCadastrar() {
-  const botaoCadastrar = document.getElementById("registerLink");  // Obtém o botão "Cadastrar"
-
-  botaoCadastrar.style.display = "none";  // Esconde o botão de cadastro
-
+  const botaoCadastrar = document.getElementById("registerLink");
+  botaoCadastrar.style.display = "none";
 }
 
 async function CADEnviarFormulario(dados, form) {
@@ -466,7 +521,7 @@ async function CADEnviarFormulario(dados, form) {
       CADExibirPopup(mensagem, "error");
     }
   } catch (erro) {
-      navigateTo('erro-servidor-505');
+    navigateTo("erro-servidor-505");
   }
 }
 
@@ -481,11 +536,10 @@ function logout() {
   // Redireciona para a página inicial
   navigateTo("home");
 
-  // Usamos setTimeout para garantir que o redirecionamento seja feito primeiro
+  // Recarrega para garantir validação/estado
   setTimeout(() => {
-    // Atualiza a página para garantir que a validação de autenticação será realizada
     location.reload();
-  }, 100); // Espera 500ms antes de recarregar a página
+  }, 100);
 }
 
 async function validarTokenSilenciosamente() {
@@ -498,9 +552,7 @@ async function validarTokenSilenciosamente() {
   try {
     const resposta = await fetch(`${window.apiBaseUrl}/cliente/validar-token`, {
       method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { "Authorization": `Bearer ${token}` }
     });
 
     if (resposta.ok) {
@@ -515,14 +567,3 @@ async function validarTokenSilenciosamente() {
     window.usuarioAutenticado = false;
   }
 }
-
-function getTokenDosCookies() {
-  return obterCookie("token");
-}
-
-
-window.pageSize = 10;
-window.currentPage = 0;
-window.totalItems = 100;
-window.totalPages = Math.ceil(window.totalItems / window.pageSize);
-window.apiBaseUrl = "https://localhost:7059/api";

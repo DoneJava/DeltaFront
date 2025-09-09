@@ -4,10 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Delta - Loja Fitness</title>
+
+  <!-- Tailwind + estilos -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="pages/pagamento/pagamento.css" />
+
+  <!-- Ícones (usados nos botões de copiar/acompanhar) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Opcional: preconnect melhora a performance do SDK -->
+  <link rel="preconnect" href="https://sdk.mercadopago.com">
 </head>
 <body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
   <!-- Header dinâmico -->
@@ -19,10 +26,34 @@
   <!-- Footer dinâmico -->
   <div id="footer"></div>
 
+  <!-- ==========================
+       MERCADO PAGO (Front)
+       ========================== -->
+  <script>
+    // Escolhe a PUBLIC KEY conforme ambiente (ajuste o domínio se precisar)
+    (function () {
+      const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+      // TESTE (dev/local)
+      const PK_TEST = 'TEST-5ff1a635-5f4c-4be5-877f-baee9beed718';
+      // PRODUÇÃO (substitua pela sua Public Key APP_USR-... do painel)
+      const PK_PROD = 'APP_USR-COLOQUE_SUA_PUBLIC_KEY_AQUI';
+
+      window.MP_PUBLIC_KEY = isLocal ? PK_TEST : PK_PROD;
+    })();
+  </script>
   <script src="https://sdk.mercadopago.com/js/v2"></script>
   <script>
-    window.mp = new MercadoPago('TEST-5ff1a635-5f4c-4be5-877f-baee9beed718'); // Chave real de teste
+    // Instancia o SDK uma única vez e deixa disponível para o app
+    try {
+      if (!window.mp) {
+        window.mp = new MercadoPago(window.MP_PUBLIC_KEY, { locale: 'pt-BR' });
+      }
+    } catch (e) {
+      console.error('Falha ao inicializar Mercado Pago:', e);
+    }
   </script>
+
+  <!-- Seus scripts (SPA) -->
   <script src="pages/home/home.js"></script>
   <script src="pages/produto-detalhes/produto-detalhes.js"></script>
   <script src="pages/carrinho/carrinho.js"></script>
@@ -32,6 +63,7 @@
   <script src="pages/finalizar-compra/finalizar-compra.js"></script>
   <script src="pages/pedidos/pedidos.js"></script>
   <script src="pages/acompanhar-pedido/acompanhar-pedido.js"></script>
+  <script src="pages/procure-descubra/procure-descubra.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

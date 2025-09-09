@@ -76,14 +76,15 @@ async function carregarCarrinho() {
                         <p class="text-sm text-gray-600">
                             Subtotal: <span class="text-yellow-600 font-bold">R$ ${subtotal.toFixed(2)}</span>
                         </p>
-                        <button onclick="removerDoCarrinho(${item.idProduto})"
-                            class="mt-4 inline-flex items-center text-sm text-red-600 hover:text-red-700 transition gap-1 font-medium">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Remover
+                        <button
+                        onclick="removerDoCarrinho(${item.idProduto}, '${String(item.tamanho ?? '-').replace(/'/g, '\\\'')}')"
+                        class="mt-4 inline-flex items-center text-sm text-red-600 hover:text-red-700 transition gap-1 font-medium">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Remover
                         </button>
                     </div>
                 </div>
@@ -116,16 +117,24 @@ async function carregarCarrinho() {
     }
   }
   
-// 🔥 Função para remover item
-function removerDoCarrinho(idProduto) {
-    let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-    carrinho = carrinho.filter(item => item.idProduto !== idProduto);
-    localStorage.setItem("carrinho", JSON.stringify(carrinho));
-    if (typeof atualizarContadorCarrinho === "function") {
-        atualizarContadorCarrinho();
-    }
-    carregarCarrinho();
+function canon(t) {
+  // usa '-' como default exatamente como você exibe
+  return (t && String(t).trim()) ? String(t).trim() : '-';
 }
+
+function removerDoCarrinho(idProduto, tamanho) {
+  const alvoTam = canon(tamanho);
+  let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+
+  carrinho = carrinho.filter(item => {
+    return !(item.idProduto === idProduto && canon(item.tamanho) === alvoTam);
+  });
+
+  localStorage.setItem("carrinho", JSON.stringify(carrinho));
+  if (typeof atualizarContadorCarrinho === "function") atualizarContadorCarrinho();
+  carregarCarrinho();
+}
+
 
 function aumentarQuantidade(idProduto, tamanho) {
     const carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];

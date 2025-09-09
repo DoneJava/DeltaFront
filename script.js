@@ -34,12 +34,14 @@ async function loadHTML(id, file) {
     if (container) {
       container.innerHTML = html;
 
-      // bootstrap do header
       if (id === "header") {
         attachDropdown();
         attachNavEvents();
         atualizarContadorCarrinho();
         inicializarMenuMobile();
+
+        // 👇 garante que a visita seja registrada assim que o header existir
+        fireVisitPingIfNeeded();
       }
     }
   } catch (error) {
@@ -91,9 +93,10 @@ function ajustarMenuMobile() {
 
   // Sempre visíveis
   mobileMenu.appendChild(criarLink("Início", "home"));
-  mobileMenu.appendChild(criarLink("Fale conosco", "fale-conosco"));
+  mobileMenu.appendChild(criarLink("Fale Conosco", "fale-conosco"));
   // ✅ Novo atalho: Acompanhar pedido (sem login)
-  mobileMenu.appendChild(criarLink("Acompanhar pedido", "acompanhar-pedido"));
+  mobileMenu.appendChild(criarLink("Acompanhar Pedido", "acompanhar-pedido"));
+  mobileMenu.appendChild(criarLink("Versículos", "procure-descubra"));
 
   // Carrinho (sempre visível)
   const carrinhoDiv = document.createElement("div");
@@ -147,6 +150,15 @@ function getTokenDosCookies() {
   return obterCookie("token");
 }
 
+function trackPageView(page, query) {
+      const route = page + (query ? `?${query}` : "");
+      fetch(`${window.apiBaseUrl}/metrics/pageview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ route, url: location.href })
+      }).catch(() => {});
+    }
+
 /* ============================================================
  * NAVEGAÇÃO SPA
  * ============================================================ */
@@ -156,6 +168,10 @@ function navigateTo(page, query = "") {
 
   loadHTML("main-content", `${page}/${page}`).then(() => {
     attachNavEvents();
+
+    // no início do navigateTo:
+    trackPageView(page, query);
+
 
     if (page === "home") {
       carregarProdutos();
@@ -370,23 +386,95 @@ function setupSenhaValidation() {
 }
 
 function setupSidebarToggle() {
-  const toggleBtn = document.getElementById("toggleSidebar");
+  // Elementos base
+  let toggleBtn = document.getElementById("toggleSidebar");
   const sidebar = document.getElementById("sidebar");
+  const backdrop = document.getElementById("sidebarBackdrop"); // pode não existir em outras páginas
   if (!toggleBtn || !sidebar) return;
 
-  toggleBtn.onclick = () => {
-    sidebar.classList.toggle("hidden");
+  // 🔧 Remove qualquer handler antigo do botão (evita conflitos)
+  const freshBtn = toggleBtn.cloneNode(true);
+  toggleBtn.parentNode.replaceChild(freshBtn, toggleBtn);
+  toggleBtn = freshBtn;
+
+  const isMobile = () => window.matchMedia("(max-width: 1023.98px)").matches;
+
+  // Ações off-canvas (usadas somente se backdrop existir)
+  const open = () => {
+    if (backdrop && isMobile()) {
+      sidebar.classList.remove("hidden");
+      sidebar.classList.add("open");              // usa seu CSS: #sidebar.open { transform: translateX(0) }
+      backdrop.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+      toggleBtn.setAttribute("aria-expanded", "true");
+      sidebar.setAttribute("aria-hidden", "false");
+    } else {
+      // Fallback: comportamento antigo
+      sidebar.classList.toggle("hidden", false);
+    }
   };
 
+  const close = () => {
+    if (backdrop && isMobile()) {
+      sidebar.classList.remove("open");
+      backdrop.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+      toggleBtn.setAttribute("aria-expanded", "false");
+      sidebar.setAttribute("aria-hidden", "true");
+    } else {
+      sidebar.classList.add("hidden");
+    }
+  };
+
+  const toggle = (e) => {
+    e.preventDefault();
+    if (backdrop && isMobile()) {
+      sidebar.classList.contains("open") ? close() : open();
+    } else {
+      // Fallback antigo
+      sidebar.classList.toggle("hidden");
+    }
+  };
+
+  // Click no botão
+  toggleBtn.addEventListener("click", toggle);
+
+  // Click no backdrop fecha (se existir)
+  if (backdrop) {
+    backdrop.addEventListener("click", close);
+  }
+
+  // Mantém sua lógica original: se clicar em botões dentro do sidebar, fecha no mobile
   const buttons = sidebar.querySelectorAll("button");
   buttons.forEach(btn => {
-    btn.onclick = () => {
-      if (window.innerWidth < 1024) {
-        sidebar.classList.add("hidden");
-      }
-    };
+    btn.addEventListener("click", () => { if (isMobile()) close(); });
   });
+
+  // Sincroniza estado ao carregar e redimensionar
+  const sync = () => {
+    if (backdrop) {
+      if (isMobile()) {
+        // mobile: fechado por padrão
+        close();
+      } else {
+        // desktop: painel fixo, sem overlay
+        sidebar.classList.remove("hidden", "open");
+        backdrop.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+        sidebar.setAttribute("aria-hidden", "false");
+      }
+    } else {
+      // Páginas sem backdrop: mantém comportamento antigo (mostrar no desktop)
+      if (window.innerWidth >= 1024) {
+        sidebar.classList.remove("hidden");
+      }
+    }
+  };
+
+  sync();
+  window.addEventListener("resize", sync);
 }
+
 
 /* ============================================================
  * CARRINHO: contador
@@ -567,3 +655,71 @@ async function validarTokenSilenciosamente() {
     window.usuarioAutenticado = false;
   }
 }
+
+// ===== Visitas: registra a cada carregamento completo (refresh/aba nova) =====
+(function () {
+  // flag só em memória: evita disparo duplo no MESMO load
+  let sentThisLoad = false;
+
+  function getOrCreateAnonId() {
+    try {
+      let id = localStorage.getItem("anonId");
+      if (!id) {
+        id = (crypto?.randomUUID?.() ||
+              "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0, v = c === "x" ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+              }));
+        localStorage.setItem("anonId", id);
+      }
+      return id;
+    } catch { return null; }
+  }
+
+  function sendVisitOnEveryLoad() {
+    if (sentThisLoad) return;   // garante 1x por carregamento
+    sentThisLoad = true;
+
+    const anonId = getOrCreateAnonId();
+    const params = new URLSearchParams(location.search);
+
+    const payload = {
+      anonId,
+      url: location.href,
+      referrer: document.referrer || null,
+      utmSource: params.get("utm_source"),
+      utmMedium: params.get("utm_medium"),
+      utmCampaign: params.get("utm_campaign"),
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      lang: navigator.language || null,
+      screenW: window.screen?.width || null,
+      screenH: window.screen?.height || null
+    };
+
+    const COOLDOWN_MS = 5000;
+    const last = Number(sessionStorage.getItem("visitLastTs") || 0);
+    if (Date.now() - last < COOLDOWN_MS) return;
+    sessionStorage.setItem("visitLastTs", Date.now().toString());
+
+
+    // pode ser fetch; se preferir ainda mais robusto em navegações rápidas, use sendBeacon
+    fetch(`${window.apiBaseUrl}/metrics/visit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).catch(() => {});
+  }
+
+  // expõe helper para chamar após injetar o header
+  window.fireVisitPingIfNeeded = function () {
+    try { sendVisitOnEveryLoad(); } catch {}
+  };
+
+  // dispara na 1ª carga do site
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", window.fireVisitPingIfNeeded, { once: true });
+  } else {
+    window.fireVisitPingIfNeeded();
+  }
+})();
+

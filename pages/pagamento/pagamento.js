@@ -51,6 +51,7 @@ window.addEventListener("hashchange", async () => {
   if (page === "pagamento") {
     resetCupomPagamento();
     await carregarTelaPagamento();
+    resetMetodoPagamento();
     await validarCheckboxUsuarioLogado();
   }
 });
@@ -436,6 +437,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       localStorage.removeItem("freteGratisOK");
     
       await carregarTelaPagamento();
+      resetMetodoPagamento();
       await validarCheckboxUsuarioLogado();
       const cepInput = document.getElementById("inputCep");
       if (cepInput) {
@@ -695,10 +697,15 @@ function validarCPF(cpf) {
   return cpfLimpo.length === 11;
 }
 
+function resetMetodoPagamento() {
+  window.metodoPagamentoSelecionado = null;
+  document.querySelectorAll('input[name="metodoPagamento"]').forEach(r => r.checked = false);
+  atualizarEstadoBotaoFinalizar();
+}
+
 function atualizarEstadoBotaoFinalizar() {
   const metodoRadio = document.querySelector('input[name="metodoPagamento"]:checked');
-  const metodoPagamentoVal = metodoRadio?.value ?? window.metodoPagamentoSelecionado ?? null;
-  const pagamentoValido = !!metodoPagamentoVal;
+  const pagamentoValido = !!metodoRadio; // só é válido se houver radio realmente marcado
 
   const usarDadosUsuarioEl = document.getElementById("usarDadosUsuario");
   const usarDadosUsuario = !!usarDadosUsuarioEl && !!usarDadosUsuarioEl.checked;

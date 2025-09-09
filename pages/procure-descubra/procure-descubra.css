@@ -1,0 +1,24 @@
+/* procure-descubra.css */
+#selectLivro { background:#fff; color:#111; }
+#selectLivro option { background:#fff; color:#111; }
+/* Busca avançada: inputs e select com fundo branco e texto preto */
+#areaAvancada select,
+#areaAvancada input[type="text"],
+#areaAvancada input[type="number"]{
+  background: #fff !important;
+  color: #111 !important;
+  caret-color: #111;
+  border-color: rgba(0,0,0,.15); /* equivalente a ring-zinc-300 */
+}
+
+/* Placeholder legível */
+#areaAvancada input::placeholder{
+  color: #6b7280 !important; /* zinc-500 */
+  opacity: 1;
+}
+
+/* Dropdown nativo do <select> */
+#areaAvancada select option{
+  background:#fff;
+  color:#111;
+}

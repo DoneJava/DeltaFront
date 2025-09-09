@@ -1,15 +1,34 @@
 <section class="w-full px-4 py-10 bg-gray-100 min-h-screen">
   <div class="max-w-6xl mx-auto bg-white shadow-xl rounded-xl overflow-hidden flex flex-col lg:flex-row">
+
     <!-- Galeria de imagens -->
-    <div class="w-full lg:w-1/2 flex flex-col lg:flex-row">
+    <div class="w-full lg:w-1/2 flex flex-row gap-3 p-4">
       <!-- Miniaturas -->
-      <div class="miniaturas-container flex lg:flex-col items-center gap-2 p-4">
-        <!-- Miniaturas serão adicionadas aqui -->
+      <div class="miniaturas-container w-16 sm:w-20 flex flex-col items-center gap-2 p-1
+                  overflow-y-auto max-h-96 sticky top-4">
+        <!-- Miniaturas serão adicionadas via JS -->
       </div>
 
       <!-- Imagem principal -->
-      <div class="w-full h-96">
-        <img id="productImage" src="" alt="Produto" class="object-cover w-full h-full">
+      <div class="flex-1 h-80 sm:h-96 relative rounded-lg bg-gray-50">
+        <div id="imgSkeleton" class="absolute inset-0 animate-pulse bg-gray-200 rounded-lg"></div>
+
+        <img
+          id="productImage"
+          src=""
+          alt="Produto"
+          class="object-contain w-full h-full rounded-lg cursor-zoom-in select-none"
+          draggable="false"
+        />
+        <!-- Botão de lupa (abre o zoom simples) -->
+        <button
+          id="btnZoom"
+          type="button"
+          class="absolute top-3 right-3 w-11 h-11 rounded-full grid place-items-center
+                text-white bg-black/60 hover:bg-black/70 active:bg-black/80 shadow-md"
+          aria-label="Ver imagem maior">
+          <i class="fas fa-search-plus text-lg"></i>
+        </button>
       </div>
     </div>
 
@@ -17,55 +36,110 @@
     <div class="w-full lg:w-1/2 p-8 flex flex-col justify-between">
       <div>
         <h1 id="productTitle" class="text-3xl font-extrabold text-gray-800 mb-2">Nome do Produto</h1>
-        <p class="text-sm text-gray-500 mb-4">Novo | +5 vendidos</p>
 
-        <div class="text-3xl font-bold text-yellow-600 mb-4" id="productPrice">R$ --</div>
+        <!-- Stats: +X visualizações -->
+        <p id="productStats" class="text-sm text-gray-500 mb-4 flex items-center gap-2">
+          <i class="fas fa-eye"></i>
+          <span> +-- visualizações</span>
+        </p>
 
+        <div id="productPrice" class="text-3xl font-bold text-yellow-600 mb-2">R$ --</div>
+        <div id="estoqueBadge" class="text-xs text-gray-500 mb-4"></div>
+
+        <!-- Tamanhos -->
         <div class="flex flex-col gap-2 mb-6">
-          <label class="text-sm font-medium text-gray-700">Cor: Preto</label>
           <label class="text-sm font-medium text-gray-700">Tamanho:</label>
-          <div class="flex flex-wrap gap-2">
+          <div id="tamanhosContainer" class="flex flex-wrap gap-2">
             <button class="tamanho-button px-4 py-2 border border-gray-300 rounded hover:border-yellow-500">PP</button>
             <button class="tamanho-button px-4 py-2 border border-gray-300 rounded hover:border-yellow-500">P</button>
             <button class="tamanho-button px-4 py-2 border border-gray-300 rounded hover:border-yellow-500">M</button>
             <button class="tamanho-button px-4 py-2 border border-gray-300 rounded hover:border-yellow-500">G</button>
             <button class="tamanho-button px-4 py-2 border border-gray-300 rounded hover:border-yellow-500">GG</button>
             <button class="tamanho-button px-4 py-2 border border-gray-300 rounded hover:border-yellow-500">XG</button>
-            </div>
+          </div>
         </div>
 
-        <label class="block text-sm text-gray-700 mb-1">Quantidade</label>
-        <input type="number" value="1" min="1"
-          class="w-32 p-3 border border-gray-300 rounded-lg mb-6 focus:outline-none focus:ring-2 focus:ring-yellow-400" />
-          <button
-            id="btnComprarDireto"
-            onclick="irParaPagamentoDireto()"
-            class="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-lg shadow-md transition text-lg mb-4 flex items-center justify-center gap-2"
-            disabled>
-            Comprar
-            <i class="fas fa-credit-card"></i>
-          </button>
+        <!-- Quantidade -->
+        <div class="mb-6">
+          <label for="inputQuantidade" class="block text-sm text-gray-700 mb-2">Quantidade</label>
+          <div class="inline-flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button type="button" id="qtyMinus" class="w-10 h-10 grid place-items-center hover:bg-gray-50">−</button>
+            <input
+              id="inputQuantidade"
+              type="number"
+              value="1"
+              min="1"
+              class="w-20 px-2 text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            />
+            <button type="button" id="qtyPlus" class="w-10 h-10 grid place-items-center hover:bg-gray-50">+</button>
+          </div>
+        </div>
 
-          <button
-            id="btnAdicionarCarrinho"
-            onclick="adicionarAoCarrinho(parseInt(new URLSearchParams(window.location.hash.split('?')[1]).get('id')))"
-            class="w-full bg-white border-2 border-yellow-400 text-black font-bold py-4 rounded-lg shadow-md transition text-lg mt-2 flex items-center justify-center gap-2 hover:bg-yellow-100 hover:shadow-yellow-400/50 hover:shadow-lg"
-            disabled>
-            Adicionar ao carrinho
-            <i class="fas fa-shopping-cart"></i>
-          </button>
+        <!-- Ações -->
+        <button
+          id="btnComprarDireto"
+          onclick="irParaPagamentoDireto()"
+          class="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-lg shadow-md transition text-lg mb-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled>
+          Comprar <i class="fas fa-credit-card"></i>
+        </button>
+
+        <button
+          id="btnAdicionarCarrinho"
+          onclick="adicionarAoCarrinho(parseInt(new URLSearchParams(window.location.hash.split('?')[1]).get('id')))"
+          class="w-full bg-white border-2 border-yellow-400 text-black font-bold py-4 rounded-lg shadow-md transition text-lg flex items-center justify-center gap-2 hover:bg-yellow-100 hover:shadow-yellow-400/50 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled>
+          Adicionar ao carrinho <i class="fas fa-shopping-cart"></i>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Descrição abaixo de tudo -->
+  <!-- Descrição -->
   <div class="max-w-6xl mx-auto mt-10 bg-white rounded-xl shadow-md p-8">
     <h2 class="text-2xl font-bold text-gray-800 mb-4">Descrição do produto</h2>
-    <p id="productDescription" class="text-lg text-gray-700 leading-relaxed text-justify">
-      <!-- Conteúdo será inserido via JS -->
-    </p>
+    <p id="productDescription" class="text-lg text-gray-700 leading-relaxed text-justify"></p>
   </div>
 </section>
+
+<!-- Overlay simples de zoom -->
+<div
+  id="lightbox"
+  class="fixed left-0 right-0 z-[9999] hidden bg-black/80 backdrop-blur-sm
+         flex items-center justify-center px-3 md:px-4"
+  style="
+    top: 0; bottom: 0;
+    padding-top: var(--lb-safe-top, 16px);
+    padding-bottom: var(--lb-safe-bottom, 16px);
+  "
+  role="dialog" aria-modal="true" aria-labelledby="lightboxTitle">
+
+  <!-- Botão de fechar FIXO, posicionado dentro da área segura -->
+  <div class="relative">
+  <h2 id="lightboxTitle" class="sr-only">Imagem ampliada</h2>
+
+  <img
+    id="lightboxImg"
+    src=""
+    alt="Imagem ampliada do produto"
+    draggable="false"
+    class="object-contain rounded-2xl shadow-2xl select-none"
+    style="max-width: 98vw; max-height: 90vh;" />
+
+  <!-- Botão de fechar COLADO NA IMAGEM -->
+  <button
+    id="lightboxClose"
+    type="button"
+    class="absolute -top-3 -right-3 w-10 h-10 md:w-12 md:h-12 rounded-full
+           text-2xl md:text-3xl text-black
+           bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600
+           focus:outline-none focus:ring-2 focus:ring-yellow-300
+           grid place-items-center shadow-lg"
+    aria-label="Fechar">×</button>
+</div>
+
+</div>
+
 <!-- Popup de sucesso -->
 <div id="popupSucesso" class="fixed bottom-6 right-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg text-sm font-semibold opacity-0 pointer-events-none transition-opacity duration-300 z-50">
   Produto adicionado ao carrinho com sucesso!

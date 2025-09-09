@@ -3,11 +3,44 @@
  * ============================================================ */
 (async function initPedidos() {
   try {
+    bindProdutoLinks(document); // 🔗 ativa navegação por delegação
     await carregarPedidosDoCliente();
   } catch (e) {
     console.error(e);
   }
 })();
+
+/* ============================================================
+ *  Navegação para produto-detalhes (delegação)
+ * ============================================================ */
+
+// qualquer elemento com [data-link-produto] navega para produto-detalhes
+function bindProdutoLinks(root = document) {
+  root.addEventListener("click", function (e) {
+    const el = e.target.closest("[data-link-produto]");
+    if (!el) return;
+    const id = el.getAttribute("data-produto-id") || el.dataset.produtoId;
+    if (!id) return;
+    e.preventDefault();
+    navigateTo("produto-detalhes", "id=" + id);
+  });
+
+  // acessível por teclado
+  root.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const el = e.target.closest("[data-link-produto]");
+    if (!el) return;
+    const id = el.getAttribute("data-produto-id") || el.dataset.produtoId;
+    if (!id) return;
+    e.preventDefault();
+    navigateTo("produto-detalhes", "id=" + id);
+  });
+}
+
+// atributos prontos para colar no HTML
+function produtoLinkAttrs(id) {
+  return `data-link-produto data-produto-id="${id}" role="link" tabindex="0"`;
+}
 
 /* ============================================================
  *  Utilidades de formatação
@@ -43,6 +76,12 @@ function pick(o, ...keys) {
     const v = o && o[k];
     if (v !== undefined && v !== null && v !== "") return v;
   }
+}
+
+/** Extrai o ID do produto considerando vários formatos vindos do back. */
+function getProdutoId(item) {
+  const id = pick(item, "ProdutoID","produtoID","produtoId","IdProduto","idProduto","id");
+  return id != null ? String(id) : null;
 }
 
 /* ============================================================
@@ -114,13 +153,17 @@ function labelStatusPagamento(v) {
  *  UI helpers (placeholders/skeleton/scroll)
  * ============================================================ */
 
-/** Imagem de item com fallback. */
-function itemImagemHtml(url, nome) {
+/** Imagem de item com fallback + link opcional. */
+function itemImagemHtml(url, nome, productId) {
   const safeUrl = url && typeof url === "string" ? url : "";
   const alt = nome || "Produto";
-  return `<img src="${safeUrl}" alt="${alt}" loading="lazy"
-              onerror="this.src='/imagens/placeholder-square.png'; this.classList.add('bg-gray-100');"
-              class="w-20 h-20 object-cover rounded-lg shadow" />`;
+  const baseCls = "w-20 h-20 object-cover rounded-lg shadow";
+  const linkAttrs = productId ? `${produtoLinkAttrs(productId)} class="cursor-pointer ${baseCls}"`
+                              : `class="${baseCls}"`;
+  const onerr = "this.src='/imagens/placeholder-square.png'; this.classList.add('bg-gray-100');";
+  return `<img src="${safeUrl || '/imagens/placeholder-square.png'}" alt="${alt}" loading="lazy"
+              onerror="${onerr}"
+              ${linkAttrs} />`;
 }
 
 /** Skeleton de carregamento (cards). */
@@ -236,63 +279,73 @@ async function carregarPedidosDoCliente() {
 
 /** Monta o card de um pedido (HTML). */
 function renderPedidoCard(pedido) {
-  // Top-level: campos principais
-  const numero  = String(pick(pedido, "PedidoID", "pedidoID", "pedidoId", "Numero", "numero", "id") ?? "-");
-  const data    = formatDateBR(pick(pedido, "DataPedido", "dataPedido", "Data", "data"));
-  const frete   = formatCurrencyBRL(pick(pedido, "ValorFrete", "valorFrete"));
-  const total   = formatCurrencyBRL(pick(pedido, "ValorTotal", "valorTotal"));
-  const statusG = pick(pedido, "Status", "status");
+  const numero  = String(pick(pedido,"PedidoID","pedidoID","pedidoId","Numero","numero","id") ?? "-");
+  const data    = formatDateBR(pick(pedido,"DataPedido","dataPedido","Data","data"));
+  const frete   = formatCurrencyBRL(pick(pedido,"ValorFrete","valorFrete"));
+  const total   = formatCurrencyBRL(pick(pedido,"ValorTotal","valorTotal"));
+  const statusG = pick(pedido,"Status","status");
   const statusHtml = statusBadge(statusG);
 
-  // Pagamento (usa descrição da PROC quando vier, senão mapeia enum numérico)
-  // Observação: as duas linhas abaixo existem também no código original e foram mantidas.
-  const pagamentoDesc   = pick(pedido, "MetodoPagamentoDescricao", "metodoPagamentoDescricao"); // (não usado diretamente)
-  const statusPagDesc   = pick(pedido, "StatusPagamentoDescricao", "statusPagamentoDescricao"); // (não usado diretamente)
-
-  const pagamentoDescApi = pick(pedido, "MetodoPagamentoDescricao", "metodoPagamentoDescricao");
-  const statusPagDescApi = pick(pedido, "StatusPagamentoDescricao", "statusPagamentoDescricao");
-  const pagamentoNum     = pick(pedido, "MetodoPagamento", "metodoPagamento");
-  const statusPagNum     = pick(pedido, "StatusPagamento", "statusPagamento");
+  const pagamentoDescApi = pick(pedido,"MetodoPagamentoDescricao","metodoPagamentoDescricao");
+  const statusPagDescApi = pick(pedido,"StatusPagamentoDescricao","statusPagamentoDescricao");
+  const pagamentoNum     = pick(pedido,"MetodoPagamento","metodoPagamento");
+  const statusPagNum     = pick(pedido,"StatusPagamento","statusPagamento");
 
   const pagamentoLabel = (pagamentoDescApi && String(pagamentoDescApi).trim() !== "")
-    ? pagamentoDescApi
-    : labelMetodoPagamento(pagamentoNum);
+    ? pagamentoDescApi : labelMetodoPagamento(pagamentoNum);
 
   const statusPagLabel = (statusPagDescApi && String(statusPagDescApi).trim() !== "")
-    ? statusPagDescApi
-    : labelStatusPagamento(statusPagNum);
+    ? statusPagDescApi : labelStatusPagamento(statusPagNum);
 
-  // Rastreio
-  const rastreio = pick(pedido, "CodigoRastreamento", "codigoRastreamento");
+  const rastreio = pick(pedido,"CodigoRastreamento","codigoRastreamento");
 
-  // Itens do pedido
   const itens = Array.isArray(pedido.Itens) ? pedido.Itens
              : Array.isArray(pedido.itens) ? pedido.itens : [];
 
   const itensHtml = itens.map(item => {
-    const nome = pick(item, "Nome", "nome") ?? "Produto";
-    const qtd  = pick(item, "Quantidade", "quantidade") ?? 1;
-    const img  = pick(item, "ImagemUrl", "imagemUrl", "ImagemPrincipal", "imagemPrincipal") ?? "";
+    const nome   = pick(item,"Nome","nome") ?? "Produto";
+    const qtd    = Number(pick(item,"Quantidade","quantidade")) || 1;
+    const img    = pick(item,"ImagemUrl","imagemUrl","ImagemPrincipal","imagemPrincipal") ?? "";
+    const prodId = getProdutoId(item);
 
-    // Pode vir de um futuro campo do pedido, ou cairá no do produto:
-    const tamanhoSelecionado = pick(item, "TamanhoSelecionado", "tamanhoSelecionado", "Tamanho", "tamanho");
-    const isLista = tamanhoSelecionado && /[;,/]/.test(String(tamanhoSelecionado)); // G,GG,M,PP etc.
-    const tamanhoHtml = (!tamanhoSelecionado || isLista) ? "" :
-      `<p class="text-sm text-gray-600 mt-1">Tamanho: <span class="text-gray-900 font-medium">${tamanhoSelecionado}</span></p>`;
+    // preço unitário salvo no pedido (sem desconto de cupom)
+    const precoUnitNum = Number(pick(item,"PrecoUnitario","precoUnitario")) || 0;
+    const precoUnitHtml = `
+      <p class="text-sm text-gray-600">
+        Preço unit.: <span class="text-gray-900 font-medium">${formatCurrencyBRL(precoUnitNum)}</span>
+      </p>`;
+
+    // tamanho comprado
+    const tamanho = pick(item,"Tamanho","tamanho","TamanhoSelecionado","tamanhoSelecionado");
+    const tamanhoHtml = (tamanho && !/[;,/]/.test(String(tamanho)))
+      ? `<p class="text-sm text-gray-600">Tamanho: <span class="text-gray-900 font-medium">${tamanho}</span></p>`
+      : "";
+
+    // 🔗 adiciona atributos para navegação em imagem e nome
+    const linkAttrs = prodId
+      ? ` ${produtoLinkAttrs(prodId)} class="cursor-pointer hover:underline text-lg font-bold text-gray-900 clamp-2 break-words"`
+      : ` class="text-lg font-bold text-gray-900 clamp-2 break-words"`;
 
     return `
       <div class="flex items-center gap-4 border-b py-4 last:border-b-0">
-        ${itemImagemHtml(img, nome)}
+        ${itemImagemHtml(img, nome, prodId)}
         <div class="flex-1">
-          <h3 class="text-lg font-bold text-gray-900 clamp-2 break-words">${nome}</h3>
+          <h3${linkAttrs}>${nome}</h3>
           ${tamanhoHtml}
+          ${precoUnitHtml}
           <p class="text-sm text-gray-600">Quantidade: <span class="text-gray-900 font-medium">${qtd}</span></p>
         </div>
-      </div>
-    `;
+      </div>`;
   }).join("");
 
-  // Endereço (opcional)
+  // desconto do pedido (não por item)
+  const desconto = Number(pick(pedido,"DescontoAplicado","descontoAplicado")) || 0;
+  const descontoHtml = desconto > 0
+    ? `<p class="text-sm text-green-700">
+         Desconto (cupom): <span class="font-bold">- ${formatCurrencyBRL(desconto)}</span>
+       </p>`
+    : "";
+
   const endereco = pedido.enderecoEntrega || pedido.EnderecoEntrega || null;
   const enderecoHtml = endereco ? `
     <div class="text-sm text-gray-700">
@@ -300,16 +353,13 @@ function renderPedidoCard(pedido) {
         endereco.logradouro, endereco.numero, endereco.complemento, endereco.bairro,
         endereco.cidade, endereco.uf, endereco.cep
       ].filter(Boolean).join(", ")}</p>
-    </div>
-  ` : "";
+    </div>` : "";
 
-  // Rastreio (link ou placeholder)
-  const rastreioHtml = rastreio ? `
-    <a href="https://rastreamento.correios.com.br/app/index.php" target="_blank" rel="noopener"
-       class="text-sm font-semibold text-indigo-700 hover:underline">Rastrear (${rastreio})</a>
-  ` : `<span class="text-sm text-gray-500">Sem código de rastreio ainda</span>`;
+  const rastreioHtml = rastreio
+    ? `<a href="https://rastreamento.correios.com.br/app/index.php" target="_blank" rel="noopener"
+         class="text-sm font-semibold text-indigo-700 hover:underline">Rastrear (${rastreio})</a>`
+    : `<span class="text-sm text-gray-500">Sem código de rastreio ainda</span>`;
 
-  // Card final
   return `
     <div class="border p-4 rounded-xl bg-gray-50 shadow hover:shadow-md transition">
       <div class="mb-4 flex items-start justify-between gap-3">
@@ -324,10 +374,7 @@ function renderPedidoCard(pedido) {
             <span class="text-gray-900 font-semibold">
               ${(pagamentoLabel && pagamentoLabel !== "0") ? pagamentoLabel : "-"}
             </span>
-            ${statusPagLabel
-              ? ` · <span class="font-semibold ${paymentStatusTextClass(statusPagLabel)}">${statusPagLabel}</span>`
-              : ""
-            }
+            ${statusPagLabel ? ` · <span class="font-semibold ${paymentStatusTextClass(statusPagLabel)}">${statusPagLabel}</span>` : ""}
           </p>
           ${enderecoHtml}
         </div>
@@ -343,10 +390,10 @@ function renderPedidoCard(pedido) {
         <p class="text-sm text-gray-600">Frete:
           <span class="text-yellow-600 font-bold">${frete}</span>
         </p>
-        <p class="text-lg font-extrabold text-gray-900">
+        ${descontoHtml}
+        <p class="text-lg text-gray-900 font-extrabold">
           Total: <span class="text-yellow-600">${total}</span>
         </p>
       </div>
-    </div>
-  `;
+    </div>`;
 }

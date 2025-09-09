@@ -46,3 +46,60 @@
     background-color: #f8f7f5;
   }
   
+  #sidebar { overscroll-behavior: contain; }
+
+  /* Gradiente do slide: amarelo forte → branco suave (faixa amarela mais longa) */
+
+
+/* Deixe os blocos internos transparentes para o gradiente aparecer */
+#carousel .bloco-transparente { background: transparent !important; }
+
+/* Véu discreto sobre o banner amarelo (só para tirar o “estouro”) */
+#carousel .banner-suave{ position: relative; }
+#carousel .banner-suave::after{
+  content:"";
+  position:absolute; inset:0;
+  background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.06));
+  pointer-events:none;
+}
+
+/* Leve “tinta” quente sob o produto para não ficar branco chapado */
+#carousel .tinta-suave{
+  background: linear-gradient(90deg, rgba(253,230,138,.12), rgba(254,243,199,.18));
+}
+
+/* garanta que o carrossel fique ACIMA do overlay branco */
+#carousel { position: relative; z-index: 1; }
+
+/* amarelo forte → branco suave (faixa amarela mais longa) */
+#carousel .slide-gradiente{
+  background: linear-gradient(
+    90deg,
+    #FACC15 0%,
+    #FACC15 14%,
+    rgba(250,204,21,0.96) 26%,
+    rgba(250,204,21,0.90) 38%,
+    rgba(253,230,138,0.82) 58%,
+    rgba(254,243,199,0.75) 76%,
+    #FFF9F1 92%,
+    #FFFFFF 100%
+  );
+  border-radius: 16px;
+}
+
+/* blocos internos deixam o gradiente aparecer */
+#carousel .bloco-transparente { background: transparent !important; }
+
+/* véu bem sutil no banner (não “lava” o amarelo) */
+#carousel .banner-suave{ position: relative; }
+#carousel .banner-suave::after{
+  content:""; position:absolute; inset:0;
+  background: linear-gradient(90deg, rgba(255,255,255,.02), rgba(255,255,255,.06));
+  pointer-events:none;
+}
+
+/* leve “tinta” quente sob o produto pra não ficar branco chapado */
+#carousel .tinta-suave{
+  background: linear-gradient(90deg, rgba(253,230,138,.12), rgba(254,243,199,.18));
+}
+

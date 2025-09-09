@@ -2,16 +2,17 @@
 <div class="hidden sm:flex w-full bg-white px-4 sm:px-8 py-4 shadow z-20 items-center justify-between gap-4">
   <div class="flex items-center gap-3">
     <span class="text-sm italic font-semibold text-yellow-500">
-      Conforto e estética <strong>Juntos! 💪</strong>
+      Fé, foco e força — <strong>estilo que inspira</strong> 💪
     </span>
   </div>
 
   <div class="flex items-center gap-2 flex-grow max-w-2xl">
     <input
       type="text"
-      placeholder="Buscar produto..."
+      placeholder="Buscar produto ou versículo…"
       id="searchBar"
       class="w-full p-4 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+      aria-label="Buscar produto ou versículo"
     />
     <button
       id="searchButton"
@@ -23,21 +24,33 @@
   </div>
 
   <span class="text-sm italic font-semibold text-yellow-500">
-    💬 Em caso de <strong>problemas</strong> com o produto, fale conosco!
+    💬 Precisa de ajuda? <strong>Fale conosco.</strong> Bom treino!
   </span>
 </div>
 
-<div class="w-full flex flex-col lg:flex-row">
-  <!-- Botão para mostrar menu no mobile -->
-  <div class="lg:hidden p-4">
-    <button id="toggleSidebar" class="w-full bg-yellow-400 text-black py-2 rounded-lg font-semibold shadow hover:bg-yellow-300">
-      Categorias
-    </button>
-  </div>
+<!-- Wrapper principal com proteção contra overflow horizontal -->
+<div class="w-full flex flex-col lg:flex-row overflow-x-hidden">
 
-  <aside id="sidebar" class="w-full lg:w-64 bg-white border-r border-gray-200 p-6 hidden lg:block z-10 lg:h-screen">
-    <div class="mt-6 border-t pt-4">
-      <h3 class="text-sm font-semibold text-yellow-500 uppercase tracking-wide mb-3"><strong>Categorias</strong></h3>
+  <!-- Botão para mostrar menu no mobile -->
+<div class="lg:hidden px-4 mt-4 mb-2">
+  <button id="toggleSidebar"
+          class="w-full bg-yellow-400 text-black py-2 rounded-lg font-semibold shadow hover:bg-yellow-300">
+    Categorias
+  </button>
+</div>
+
+<!-- Backdrop para o overlay do sidebar (só no mobile) -->
+<div id="sidebarBackdrop" class="hidden lg:hidden fixed inset-0 bg-black/40 z-50"></div>
+
+
+<!-- Sidebar -->
+<aside id="sidebar"
+  class="w-full lg:w-64 bg-white border-r border-gray-200 p-6 lg:block z-10 lg:h-screen lg:overflow-y-auto"
+  aria-hidden="true">
+  <div class="mt-6 border-t pt-4">
+    <h3 class="hidden lg:block text-sm font-semibold text-yellow-500 uppercase tracking-wide mb-3">
+      <strong>Categorias</strong>
+    </h3>
       <div class="mt-2 flex flex-wrap gap-4 sm:flex-col sm:gap-3">
         <label class="flex items-center gap-2 sm:w-full w-auto">
           <input type="checkbox" class="checkbox-amarelo form-checkbox h-5 w-5 focus:outline-none" data-category="roupas" />
@@ -70,13 +83,13 @@
       </div>
     </div>
   </aside>
-  
-<div id="loadingProdutos" class="w-full flex justify-center items-center min-h-[400px]">
-  <div class="flex flex-col items-center space-y-4">
-    <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-400"></div>
-    <p class="text-black font-semibold text-lg">Carregando produtos...</p>
+
+  <div id="loadingProdutos" class="w-full flex justify-center items-center min-h-[400px]">
+    <div class="flex flex-col items-center space-y-4">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-400"></div>
+      <p class="text-black font-semibold text-lg">Carregando produtos…</p>
+    </div>
   </div>
-</div>
 
   <!-- Conteúdo principal -->
   <section class="w-full lg:flex-1 p-4 sm:p-6 flex flex-col justify-between">
@@ -85,9 +98,10 @@
       <div class="flex sm:hidden items-center gap-2 mb-6">
         <input
           type="text"
-          placeholder="Buscar produto..."
+          placeholder="Buscar produto ou versículo…"
           id="searchBarMobile"
           class="flex-1 p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          aria-label="Buscar produto ou versículo"
         />
         <button
           id="searchButtonMobile"
@@ -102,25 +116,56 @@
         <div id="carousel" class="flex transition-transform duration-700 ease-in-out">
           <!-- Preenchido dinamicamente -->
         </div>
-      
         <div class="absolute inset-0 bg-gradient-to-r from-white/60 via-white/10 to-transparent backdrop-blur-sm pointer-events-none rounded-2xl z-0"></div>
-      
         <button onclick="moverCarrossel(-1)"
-          class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 text-gray-800 hover:bg-yellow-400 hover:text-black font-bold text-xl px-3 py-2 rounded-full shadow-md transition duration-300 z-10">
+          class="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 text-gray-800 hover:bg-yellow-100 hover:text-black font-bold text-xl px-3 py-2 rounded-full shadow-md transition duration-300 z-10">
           ‹
         </button>
         <button onclick="moverCarrossel(1)"
-          class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 text-gray-800 hover:bg-yellow-400 hover:text-black font-bold text-xl px-3 py-2 rounded-full shadow-md transition duration-300 z-10">
+          class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 text-gray-800 hover:bg-yellow-100 hover:text-black font-bold text-xl px-3 py-2 rounded-full shadow-md transition duration-300 z-10">
           ›
         </button>
       </div>
-      
 
       <!-- Grid de produtos -->
       <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8"></div>
 
-      <!-- Paginação -->
-      <div id="pagination" class="flex flex-row justify-center items-center flex-wrap gap-2 mt-6"></div>
+      <!-- Paginação (horizontal no mobile) -->
+      <div id="pagination"
+           class="flex flex-row flex-nowrap justify-center items-center gap-2 mt-6 overflow-x-auto no-scrollbar">
+      </div>
     </div>
   </section>
 </div>
+
+<style>
+  /* Overlay do sidebar no mobile */
+  @media (max-width: 1023.98px) {
+    /* painel lateral “fora da tela” por padrão */
+    #sidebar {
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      width: 18rem;           /* ~288px */
+      max-width: 85vw;
+      background: #fff;
+      box-shadow: 0 18px 40px rgba(0,0,0,.25);
+      overflow-y: auto;
+      transform: translateX(-105%);
+      transition: transform .22s ease-out;
+      z-index: 60;
+    }
+    /* quando aberto */
+    #sidebar.open {
+      transform: translateX(0);
+    }
+    /* backdrop escurecido atrás do painel */
+    #sidebarBackdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 50;
+    }
+    #sidebarBackdrop.hidden { display: none; }
+  }
+</style>
+
